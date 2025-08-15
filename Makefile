@@ -16,7 +16,7 @@ db:
 # só usa uma vez, pra configurar um novo projeto
 setup:
 	# copiar o .env se ainda não existir
-	cp --update=none laravel/.env.example laravel/.env
+	cp --update=none backend/.env.example backend/.env
 
 	# instalar as dependencias/pacotes
 	docker compose exec php bash -c "composer install"
@@ -388,4 +388,5 @@ debug_routes:
 # Verificar saúde da aplicação
 health_check:
 	docker compose exec php bash -c "php artisan about && php artisan route:list | head -5 && php artisan migrate:status"
+
 
