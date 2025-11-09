@@ -110,7 +110,7 @@ mongo: ## Conecta ao MongoDB
 	docker compose exec mongodb mongosh -u developer -p 123456 --authenticationDatabase admin
 
 mongo-root: ## Conecta ao MongoDB (root)
-	docker compose exec mongodb mongosh -u root -p 123456 --authenticationDatabase admin
+	docker compose exec mongodb mongosh -u developer -p 123456 --authenticationDatabase admin
 
 mongo-shell: ## Abre MongoDB shell interativo
 	docker compose exec mongodb mongosh

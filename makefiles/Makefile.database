@@ -121,19 +121,6 @@ restore-postgres: ## Restaura backup do PostgreSQL
 		echo "$(RED)❌ Arquivo não encontrado!$(NC)"; \
 	fi
 
-backup-postgres-custom: ## Faz backup customizado do PostgreSQL (tabelas específicas)
-	@read -p "Tabelas para backup (separadas por espaço): " tables; \
-	if [ -z "$$tables" ]; then \
-		echo "$(RED)❌ Nenhuma tabela especificada!$(NC)"; \
-	else \
-		echo "$(GREEN)💾 Criando backup customizado...$(NC)"; \
-		mkdir -p backups; \
-		timestamp=$$(date +%Y%m%d_%H%M%S); \
-		docker compose exec postgres pg_dump -U developer -d db_laravel -t $$tables > backups/postgres_custom_backup_$$timestamp.sql && \
-		echo "$(GREEN)✅ Backup salvo em: backups/postgres_custom_backup_$$timestamp.sql$(NC)"; \
-	fi
-
-
 ##@ 🔍 PostgreSQL - Comandos Avançados
 
 psql-list-databases: ## Lista todos os bancos de dados PostgreSQL
