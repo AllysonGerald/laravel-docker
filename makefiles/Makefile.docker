@@ -103,8 +103,17 @@ db-dev: ## Conecta ao MySQL (developer)
 psql: ## Conecta ao PostgreSQL
 	docker compose exec postgres psql -U developer -d db_laravel
 
+psql-root: ## Conecta ao PostgreSQL (postgres)
+	docker compose exec postgres psql -U postgres
+
 mongo: ## Conecta ao MongoDB
 	docker compose exec mongodb mongosh -u developer -p 123456 --authenticationDatabase admin
+
+mongo-root: ## Conecta ao MongoDB (root)
+	docker compose exec mongodb mongosh -u developer -p 123456 --authenticationDatabase admin
+
+mongo-shell: ## Abre MongoDB shell interativo
+	docker compose exec mongodb mongosh
 
 redis-cli: ## Acessa Redis CLI
 	docker compose exec redis redis-cli

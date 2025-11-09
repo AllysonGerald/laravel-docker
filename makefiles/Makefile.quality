@@ -249,3 +249,123 @@ code-metrics: ## Mostra métricas gerais do código
 		docker compose exec php ./vendor/bin/phploc backend/app || true; \
 	fi
 
+
+##@ 📚 Documentação - PHPDoc
+
+phpdoc-install: ## Instala phpDocumentor
+	@echo "$(GREEN)📦 Instalando phpDocumentor...$(NC)"
+	docker compose exec php composer require --dev phpdocumentor/phpdocumentor
+	@echo "$(GREEN)✅ phpDocumentor instalado!$(NC)"
+
+phpdoc-generate: ## Gera documentação PHPDoc
+	@echo "$(GREEN)📚 Gerando documentação PHPDoc...$(NC)"
+	@mkdir -p docs/api
+	docker compose exec php ./vendor/bin/phpdoc -d backend/app -t docs/api --title="API Documentation" || true
+
+phpdoc-generate-custom: ## Gera documentação com configuração customizada
+	@read -p "Diretório de saída (ex: docs/api): " dir; \
+	mkdir -p $$dir; \
+	echo "$(GREEN)📚 Gerando documentação em $$dir...$(NC)"; \
+	docker compose exec php ./vendor/bin/phpdoc -d backend/app -t $$dir --title="API Documentation" || true
+
+
+##@ 📚 Documentação - API Documentation Generator
+
+api-docs-install: ## Instala Laravel API Documentation Generator
+	@echo "$(GREEN)📦 Instalando Laravel API Documentation Generator...$(NC)"
+	docker compose exec php composer require --dev mpociot/laravel-apidoc-generator || \
+	docker compose exec php composer require --dev darkaonline/l5-swagger || \
+	echo "$(YELLOW)⚠️  Escolha uma ferramenta: mpociot/laravel-apidoc-generator ou darkaonline/l5-swagger$(NC)"
+
+api-docs-generate: ## Gera documentação da API
+	@echo "$(GREEN)📚 Gerando documentação da API...$(NC)"
+	@if docker compose exec php composer show | grep -q "mpociot/laravel-apidoc-generator"; then \
+		docker compose exec php php artisan api:generate || true; \
+	elif docker compose exec php composer show | grep -q "darkaonline/l5-swagger"; then \
+		docker compose exec php php artisan l5-swagger:generate || true; \
+	else \
+		echo "$(YELLOW)⚠️  Nenhuma ferramenta de documentação instalada$(NC)"; \
+		echo "$(YELLOW)💡 Execute: make api-docs-install$(NC)"; \
+	fi
+
+
+##@ 📚 Documentação - Scribe
+
+scribe-install: ## Instala Scribe (documentação de API)
+	@echo "$(GREEN)📦 Instalando Scribe...$(NC)"
+	docker compose exec php composer require --dev knuckleswtf/scribe
+	@echo "$(GREEN)✅ Scribe instalado!$(NC)"
+	@echo "$(YELLOW)💡 Execute: make scribe-generate$(NC)"
+
+scribe-generate: ## Gera documentação com Scribe
+	@echo "$(GREEN)📚 Gerando documentação com Scribe...$(NC)"
+	docker compose exec php php artisan scribe:generate || true
+
+scribe-publish: ## Publica configuração do Scribe
+	@echo "$(GREEN)⚙️  Publicando configuração do Scribe...$(NC)"
+	docker compose exec php php artisan vendor:publish --tag=scribe-config || true
+
+
+##@ 📝 Documentação - Scramble (API Documentation)
+
+scramble-install: ## Instala Scramble (gerador de documentação OpenAPI)
+	@echo "$(GREEN)📦 Instalando Scramble...$(NC)"
+	docker compose exec php composer require --dev dedoc/scramble
+	@echo "$(GREEN)✅ Scramble instalado!$(NC)"
+	@echo "$(YELLOW)💡 Execute: make scramble-publish$(NC)"
+
+scramble-publish: ## Publica configuração do Scramble
+	@echo "$(GREEN)⚙️  Publicando configuração do Scramble...$(NC)"
+	docker compose exec php php artisan vendor:publish --tag=scramble-config || true
+
+scramble-generate: ## Gera documentação OpenAPI/Swagger
+	@echo "$(GREEN)📚 Gerando documentação OpenAPI com Scramble...$(NC)"
+	@echo "$(YELLOW)💡 Acesse: http://localhost:8080/api/docs para ver a documentação$(NC)"
+	@echo "$(YELLOW)💡 Ou gere o arquivo JSON: make scramble-generate-json$(NC)"
+
+scramble-generate-json: ## Gera arquivo OpenAPI JSON
+	@read -p "Nome do arquivo (ex: openapi.json): " file; \
+	file=$${file:-openapi.json}; \
+	echo "$(GREEN)📚 Gerando $$file...$(NC)"; \
+	docker compose exec php php artisan scramble:export --output=$$file || true
+
+scramble-generate-yaml: ## Gera arquivo OpenAPI YAML
+	@read -p "Nome do arquivo (ex: openapi.yaml): " file; \
+	file=$${file:-openapi.yaml}; \
+	echo "$(GREEN)📚 Gerando $$file...$(NC)"; \
+	docker compose exec php php artisan scramble:export --output=$$file --format=yaml || true
+
+
+##@ 📝 Documentação - Swagger (L5-Swagger)
+
+swagger-install: ## Instala L5-Swagger (Swagger UI para Laravel)
+	@echo "$(GREEN)📦 Instalando L5-Swagger...$(NC)"
+	docker compose exec php composer require --dev darkaonline/l5-swagger
+	@echo "$(GREEN)✅ L5-Swagger instalado!$(NC)"
+	@echo "$(YELLOW)💡 Execute: make swagger-publish$(NC)"
+
+swagger-publish: ## Publica configuração do Swagger
+	@echo "$(GREEN)⚙️  Publicando configuração do Swagger...$(NC)"
+	docker compose exec php php artisan vendor:publish --provider "L5Swagger\L5SwaggerServiceProvider" || true
+
+swagger-generate: ## Gera documentação Swagger
+	@echo "$(GREEN)📚 Gerando documentação Swagger...$(NC)"
+	docker compose exec php php artisan l5-swagger:generate || true
+	@echo "$(GREEN)✅ Documentação gerada!$(NC)"
+	@echo "$(YELLOW)💡 Acesse: http://localhost:8080/api/documentation$(NC)"
+
+swagger-ui: ## Abre Swagger UI no navegador
+	@echo "$(GREEN)🌐 Abrindo Swagger UI...$(NC)"
+	@xdg-open http://localhost:8080/api/documentation 2>/dev/null || \
+	 open http://localhost:8080/api/documentation 2>/dev/null || \
+	 echo "$(YELLOW)💡 Acesse: http://localhost:8080/api/documentation$(NC)"
+
+swagger-config: ## Mostra configuração atual do Swagger
+	@echo "$(GREEN)⚙️  Configuração do Swagger:$(NC)"
+	@if [ -f "backend/config/l5-swagger.php" ]; then \
+		cat backend/config/l5-swagger.php | grep -A 5 "routes" || true; \
+	else \
+		echo "$(YELLOW)⚠️  Arquivo de configuração não encontrado$(NC)"; \
+		echo "$(YELLOW)💡 Execute: make swagger-publish$(NC)"; \
+	fi
+

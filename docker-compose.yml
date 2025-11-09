@@ -76,7 +76,7 @@ services:
     tty: true
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/postgresql.conf:/var/lib/postgresql/data/postgresql.conf
+      - ./docker/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
     networks:
       - setup-laravel-network
     ports:
@@ -85,8 +85,7 @@ services:
       POSTGRES_DB: db_laravel
       POSTGRES_USER: developer
       POSTGRES_PASSWORD: 123456
-      PGDATA: /var/lib/postgresql/data/pgdata
-    command: postgres -c config_file=/var/lib/postgresql/data/postgresql.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U developer -d db_laravel"]
       interval: 30s

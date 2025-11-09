@@ -90,10 +90,10 @@ backup-db: ## Faz backup do banco MySQL
 restore-db: ## Restaura backup do MySQL
 	@echo "$(YELLOW)Arquivos disponíveis em backups/:$(NC)"
 	@ls -lh backups/*.sql 2>/dev/null || echo "Nenhum backup encontrado"
-	@read -p "Nome do arquivo (sem o path): " file; \
-	if [ -f "backups/$$file" ]; then \
+	@read -p "Nome do arquivo de backup: " file; \
+	if [ -f "$$file" ]; then \
 		echo "$(YELLOW)Restaurando backup...$(NC)"; \
-		docker compose exec -T mysql mysql -u root -proot db_laravel < backups/$$file && \
+		docker compose exec -T mysql mysql -u root -proot db_laravel < "$$file" && \
 		echo "$(GREEN)✅ Backup restaurado!$(NC)"; \
 	else \
 		echo "$(RED)❌ Arquivo não encontrado!$(NC)"; \
@@ -112,14 +112,41 @@ backup-postgres: ## Faz backup do banco PostgreSQL
 restore-postgres: ## Restaura backup do PostgreSQL
 	@echo "$(YELLOW)Arquivos disponíveis em backups/:$(NC)"
 	@ls -lh backups/*.sql 2>/dev/null || echo "Nenhum backup encontrado"
-	@read -p "Nome do arquivo (sem o path): " file; \
-	if [ -f "backups/$$file" ]; then \
+	@read -p "Nome do arquivo de backup: " file; \
+	if [ -f "$$file" ]; then \
 		echo "$(YELLOW)Restaurando backup...$(NC)"; \
-		docker compose exec -T postgres psql -U developer db_laravel < backups/$$file && \
+		docker compose exec -T postgres psql -U developer db_laravel < "$$file" && \
 		echo "$(GREEN)✅ Backup restaurado!$(NC)"; \
 	else \
 		echo "$(RED)❌ Arquivo não encontrado!$(NC)"; \
 	fi
+
+##@ 🔍 PostgreSQL - Comandos Avançados
+
+psql-list-databases: ## Lista todos os bancos de dados PostgreSQL
+	docker compose exec postgres psql -U developer -l
+
+psql-list-tables: ## Lista todas as tabelas do banco
+	docker compose exec postgres psql -U developer -d db_laravel -c "\dt"
+
+psql-describe-table: ## Descreve estrutura de uma tabela
+	@read -p "Nome da tabela: " table; \
+	docker compose exec postgres psql -U developer -d db_laravel -c "\d $$table"
+
+psql-exec: ## Executa comando SQL no PostgreSQL
+	@read -p "Comando SQL: " query; \
+	docker compose exec postgres psql -U developer -d db_laravel -c "$$query"
+
+psql-vacuum: ## Executa VACUUM no banco (limpeza e otimização)
+	@echo "$(YELLOW)🔄 Executando VACUUM...$(NC)"
+	docker compose exec postgres psql -U developer -d db_laravel -c "VACUUM FULL ANALYZE;"
+	@echo "$(GREEN)✅ VACUUM concluído!$(NC)"
+
+psql-stats: ## Mostra estatísticas do PostgreSQL
+	docker compose exec postgres psql -U developer -d db_laravel -c "SELECT pg_size_pretty(pg_database_size('db_laravel')) AS database_size;"
+
+psql-connections: ## Mostra conexões ativas
+	docker compose exec postgres psql -U developer -d db_laravel -c "SELECT pid, usename, application_name, client_addr, state FROM pg_stat_activity;"
 
 
 ##@ 💾 Backup & Restore - MongoDB
@@ -135,10 +162,10 @@ backup-mongodb: ## Faz backup do banco MongoDB
 restore-mongodb: ## Restaura backup do MongoDB
 	@echo "$(YELLOW)Diretórios disponíveis em backups/:$(NC)"
 	@ls -d backups/mongodb_backup_* 2>/dev/null || echo "Nenhum backup encontrado"
-	@read -p "Nome do diretório (sem o path): " dir; \
-	if [ -d "backups/$$dir" ]; then \
+	@read -p "Nome do diretório de backup: " dir; \
+	if [ -d "$$dir" ]; then \
 		echo "$(YELLOW)Restaurando backup...$(NC)"; \
-		docker compose cp backups/$$dir mongodb:/tmp/restore && \
+		docker compose cp "$$dir" mongodb:/tmp/restore && \
 		docker compose exec mongodb mongorestore --username=developer --password=123456 --authenticationDatabase=admin --db=db_laravel /tmp/restore/db_laravel && \
 		echo "$(GREEN)✅ Backup restaurado!$(NC)"; \
 	else \
