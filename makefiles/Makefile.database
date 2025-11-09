@@ -90,10 +90,10 @@ backup-db: ## Faz backup do banco MySQL
 restore-db: ## Restaura backup do MySQL
 	@echo "$(YELLOW)Arquivos disponíveis em backups/:$(NC)"
 	@ls -lh backups/*.sql 2>/dev/null || echo "Nenhum backup encontrado"
-	@read -p "Nome do arquivo (sem o path): " file; \
-	if [ -f "backups/$$file" ]; then \
+	@read -p "Nome do arquivo de backup: " file; \
+	if [ -f "$$file" ]; then \
 		echo "$(YELLOW)Restaurando backup...$(NC)"; \
-		docker compose exec -T mysql mysql -u root -proot db_laravel < backups/$$file && \
+		docker compose exec -T mysql mysql -u root -proot db_laravel < "$$file" && \
 		echo "$(GREEN)✅ Backup restaurado!$(NC)"; \
 	else \
 		echo "$(RED)❌ Arquivo não encontrado!$(NC)"; \
@@ -112,10 +112,10 @@ backup-postgres: ## Faz backup do banco PostgreSQL
 restore-postgres: ## Restaura backup do PostgreSQL
 	@echo "$(YELLOW)Arquivos disponíveis em backups/:$(NC)"
 	@ls -lh backups/*.sql 2>/dev/null || echo "Nenhum backup encontrado"
-	@read -p "Nome do arquivo (sem o path): " file; \
-	if [ -f "backups/$$file" ]; then \
+	@read -p "Nome do arquivo de backup: " file; \
+	if [ -f "$$file" ]; then \
 		echo "$(YELLOW)Restaurando backup...$(NC)"; \
-		docker compose exec -T postgres psql -U developer db_laravel < backups/$$file && \
+		docker compose exec -T postgres psql -U developer db_laravel < "$$file" && \
 		echo "$(GREEN)✅ Backup restaurado!$(NC)"; \
 	else \
 		echo "$(RED)❌ Arquivo não encontrado!$(NC)"; \
@@ -135,10 +135,10 @@ backup-mongodb: ## Faz backup do banco MongoDB
 restore-mongodb: ## Restaura backup do MongoDB
 	@echo "$(YELLOW)Diretórios disponíveis em backups/:$(NC)"
 	@ls -d backups/mongodb_backup_* 2>/dev/null || echo "Nenhum backup encontrado"
-	@read -p "Nome do diretório (sem o path): " dir; \
-	if [ -d "backups/$$dir" ]; then \
+	@read -p "Nome do diretório de backup: " dir; \
+	if [ -d "$$dir" ]; then \
 		echo "$(YELLOW)Restaurando backup...$(NC)"; \
-		docker compose cp backups/$$dir mongodb:/tmp/restore && \
+		docker compose cp "$$dir" mongodb:/tmp/restore && \
 		docker compose exec mongodb mongorestore --username=developer --password=123456 --authenticationDatabase=admin --db=db_laravel /tmp/restore/db_laravel && \
 		echo "$(GREEN)✅ Backup restaurado!$(NC)"; \
 	else \
