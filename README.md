@@ -2,7 +2,7 @@
 
 Ambiente de desenvolvimento Laravel completo com Docker, incluindo múltiplos bancos de dados (MySQL, PostgreSQL, MongoDB) e Redis, com mais de 400 comandos Make organizados em módulos.
 
-![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=flat-square&logo=laravel)
+![Laravel](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel)
 ![PHP](https://img.shields.io/badge/PHP-8.x-777BB4?style=flat-square&logo=php)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat-square&logo=mysql)
