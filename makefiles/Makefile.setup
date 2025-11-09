@@ -295,6 +295,9 @@ init-project: ## Inicializa projeto do zero (primeira vez) 🌟
 		echo "  make help        - Ver todos comandos"; \
 		echo "  make bash        - Acessar container PHP"; \
 		echo "  make db          - Acessar MySQL"; \
+		echo "  make psql        - Acessar PostgreSQL"; \
+		echo "  make mongo       - Acessar MongoDB"; \
+		echo "  make redis-cli   - Acessar Redis"; \
 		echo "  make logs        - Ver logs"; \
 	else \
 		echo "Cancelado."; \
