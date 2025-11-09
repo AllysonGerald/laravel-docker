@@ -1,0 +1,159 @@
+##@ 🔭 Laravel Telescope (Debug & Monitoring)
+
+telescope-install: ## Instala Laravel Telescope
+	docker compose exec php composer require laravel/telescope --dev
+	docker compose exec php php artisan telescope:install
+	docker compose exec php php artisan migrate
+
+telescope-publish: ## Publica assets do Telescope
+	docker compose exec php php artisan telescope:publish
+
+telescope-clear: ## Limpa registros do Telescope
+	docker compose exec php php artisan telescope:clear
+
+telescope-prune: ## Remove registros antigos do Telescope
+	docker compose exec php php artisan telescope:prune
+
+telescope-pause: ## Pausa gravação do Telescope
+	docker compose exec php php artisan telescope:pause
+
+telescope-continue: ## Continua gravação do Telescope
+	docker compose exec php php artisan telescope:continue
+
+
+##@ 🌊 Laravel Horizon (Queue Dashboard)
+
+horizon-install: ## Instala Laravel Horizon
+	docker compose exec php composer require laravel/horizon
+	docker compose exec php php artisan horizon:install
+	docker compose exec php php artisan migrate
+
+horizon: ## Inicia Horizon
+	docker compose exec php php artisan horizon
+
+horizon-daemon: ## Inicia Horizon em background
+	docker compose exec -d php php artisan horizon
+
+horizon-pause: ## Pausa workers do Horizon
+	docker compose exec php php artisan horizon:pause
+
+horizon-continue: ## Retoma workers do Horizon
+	docker compose exec php php artisan horizon:continue
+
+horizon-terminate: ## Termina Horizon gracefully
+	docker compose exec php php artisan horizon:terminate
+
+horizon-status: ## Status do Horizon
+	docker compose exec php php artisan horizon:status
+
+horizon-publish: ## Publica assets do Horizon
+	docker compose exec php php artisan horizon:publish
+
+horizon-list: ## Lista supervisors do Horizon
+	docker compose exec php php artisan horizon:list
+
+horizon-purge: ## Limpa jobs terminados/falhados
+	docker compose exec php php artisan horizon:purge
+
+
+##@ 🔐 Laravel Sanctum (API Authentication)
+
+sanctum-install: ## Instala Laravel Sanctum
+	docker compose exec php composer require laravel/sanctum
+	docker compose exec php php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+	docker compose exec php php artisan migrate
+
+sanctum-prune: ## Remove tokens expirados
+	docker compose exec php php artisan sanctum:prune-expired
+
+
+##@ 🎫 Laravel Passport (OAuth2)
+
+passport-install: ## Instala Laravel Passport
+	docker compose exec php composer require laravel/passport
+	docker compose exec php php artisan migrate
+	docker compose exec php php artisan passport:install
+
+passport-keys: ## Gera chaves de encriptação
+	docker compose exec php php artisan passport:keys
+
+passport-client: ## Cria novo client OAuth2
+	docker compose exec php php artisan passport:client
+
+passport-purge: ## Remove tokens revogados/expirados
+	docker compose exec php php artisan passport:purge
+
+
+##@ 🔍 Laravel Scout (Full-text Search)
+
+scout-install: ## Instala Laravel Scout
+	docker compose exec php composer require laravel/scout
+	docker compose exec php php artisan vendor:publish --provider="Laravel\Scout\ScoutServiceProvider"
+
+scout-import: ## Importa registros para search index
+	@read -p "Nome do Model: " model; \
+	docker compose exec php php artisan scout:import "App\\Models\\$$model"
+
+scout-flush: ## Remove todos registros do index
+	@read -p "Nome do Model: " model; \
+	docker compose exec php php artisan scout:flush "App\\Models\\$$model"
+
+scout-delete-index: ## Deleta index
+	@read -p "Nome do índice: " index; \
+	docker compose exec php php artisan scout:delete-index $$index
+
+scout-status: ## Status do Scout
+	docker compose exec php php artisan scout:status
+
+
+##@ 📡 Broadcasting & WebSockets
+
+broadcasting-install: ## Setup de Broadcasting
+	docker compose exec php php artisan install:broadcasting
+
+reverb-install: ## Instala Laravel Reverb (WebSockets)
+	docker compose exec php composer require laravel/reverb
+	docker compose exec php php artisan reverb:install
+
+reverb-start: ## Inicia servidor Reverb
+	docker compose exec php php artisan reverb:start
+
+reverb-restart: ## Reinicia servidor Reverb
+	docker compose exec php php artisan reverb:restart
+
+pusher-config: ## Configura Pusher
+	@echo "$(YELLOW)Configure as variáveis no .env:$(NC)"
+	@echo "BROADCAST_DRIVER=pusher"
+	@echo "PUSHER_APP_ID=your-app-id"
+	@echo "PUSHER_APP_KEY=your-app-key"
+	@echo "PUSHER_APP_SECRET=your-app-secret"
+	@echo "PUSHER_APP_CLUSTER=mt1"
+
+
+##@ 🎨 Laravel Livewire
+
+livewire-install: ## Instala Laravel Livewire
+	docker compose exec php composer require livewire/livewire
+	docker compose exec php php artisan livewire:publish --config
+
+livewire-make: ## Cria componente Livewire
+	@read -p "Nome do componente: " name; \
+	docker compose exec php php artisan make:livewire $$name
+
+livewire-delete: ## Remove componente Livewire
+	@read -p "Nome do componente: " name; \
+	docker compose exec php php artisan livewire:delete $$name
+
+livewire-move: ## Move/renomeia componente Livewire
+	@read -p "De (nome atual): " from; \
+	read -p "Para (novo nome): " to; \
+	docker compose exec php php artisan livewire:move $$from $$to
+
+livewire-copy: ## Copia componente Livewire
+	@read -p "De: " from; \
+	read -p "Para: " to; \
+	docker compose exec php php artisan livewire:copy $$from $$to
+
+livewire-discover: ## Descobre componentes Livewire
+	docker compose exec php php artisan livewire:discover
+

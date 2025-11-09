@@ -1,0 +1,22 @@
+##@ 🧪 Testes
+
+test: ## Executa todos os testes
+	@echo "$(GREEN)🧪 Executando testes...$(NC)"
+	docker compose exec php php artisan test
+
+test-coverage: ## Executa testes com coverage
+	docker compose exec php php artisan test --coverage
+
+test-parallel: ## Executa testes em paralelo
+	docker compose exec php php artisan test --parallel
+
+test-filter: ## Executa teste específico
+	@read -p "Filtro de teste: " filter; \
+	docker compose exec php php artisan test --filter=$$filter
+
+pest: ## Executa Pest tests
+	docker compose exec php ./vendor/bin/pest
+
+phpunit: ## Executa PHPUnit
+	docker compose exec php ./vendor/bin/phpunit
+

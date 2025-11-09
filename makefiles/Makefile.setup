@@ -1,0 +1,356 @@
+##@ 🎬 Setup & Instalação
+
+setup: ## Setup inicial completo do projeto
+	@echo "$(GREEN)🎬 Configurando projeto Laravel...$(NC)"
+	@echo "$(YELLOW)📋 1/5 Copiando .env...$(NC)"
+	cp --update=none backend/.env.example backend/.env
+	@echo "$(YELLOW)📦 2/5 Instalando dependências Composer...$(NC)"
+	docker compose exec php composer install
+	@echo "$(YELLOW)🔑 3/5 Gerando chave da aplicação...$(NC)"
+	docker compose exec php php artisan key:generate
+	@echo "$(YELLOW)🗄️  4/5 Executando migrations...$(NC)"
+	docker compose exec php php artisan migrate
+	@echo "$(YELLOW)🔗 5/5 Criando link de storage...$(NC)"
+	docker compose exec php php artisan storage:link
+	@echo "$(GREEN)✅ Setup concluído!$(NC)"
+
+setup-full: ## Setup completo com seed
+	@echo "$(GREEN)🎬 Setup completo com seed...$(NC)"
+	$(MAKE) setup
+	@echo "$(YELLOW)🌱 Executando seeders...$(NC)"
+	docker compose exec php php artisan db:seed
+	@echo "$(GREEN)✅ Setup completo concluído!$(NC)"
+
+install: ## Apenas instala dependências Composer
+	@echo "$(YELLOW)📦 Instalando dependências...$(NC)"
+	docker compose exec php composer install
+
+install-dev: ## Instala dependências de desenvolvimento
+	@echo "$(YELLOW)📦 Instalando dependências de dev...$(NC)"
+	docker compose exec php composer install --dev
+
+update: ## Atualiza dependências Composer
+	@echo "$(YELLOW)⬆️  Atualizando dependências...$(NC)"
+	docker compose exec php composer update
+
+
+##@ 🚀 Workflows Rápidos
+
+dev: up logs ## Inicia e mostra logs
+
+quick-start: up setup ## Start rápido com setup
+
+rebuild-all: down up-build migrate ## Rebuild completo
+
+fresh: migrate-fresh-seed clear-all ## Fresh start com seed
+
+deploy-prep: ## Prepara para deploy
+	@echo "$(GREEN)🚀 Preparando para deploy...$(NC)"
+	$(MAKE) test
+	$(MAKE) production-ready
+	@echo "$(GREEN)✅ Pronto para deploy!$(NC)"
+
+
+##@ 🎯 Workflows Completos
+
+full-reset: ## Reset completo do projeto
+	@echo "$(YELLOW)🔄 Fazendo reset completo...$(NC)"
+	$(MAKE) down-volumes
+	$(MAKE) up-build
+	$(MAKE) setup-full
+	$(MAKE) clear-all
+	@echo "$(GREEN)✅ Reset completo finalizado!$(NC)"
+
+daily-start: ## Rotina diária de início
+	@echo "$(BLUE)☀️  Bom dia! Iniciando ambiente...$(NC)"
+	docker compose up -d
+	$(MAKE) health
+	docker compose exec php php artisan migrate:status
+	@echo "$(GREEN)✅ Ambiente pronto para trabalhar!$(NC)"
+
+before-commit: ## Checklist antes de commit
+	@echo "$(YELLOW)📋 Executando checklist...$(NC)"
+	@echo "1️⃣  Executando testes..."
+	$(MAKE) test
+	@echo "2️⃣  Validando código..."
+	docker compose exec php ./vendor/bin/phpstan analyse || true
+	docker compose exec php ./vendor/bin/php-cs-fixer fix --dry-run || true
+	@echo "3️⃣  Verificando migrations..."
+	docker compose exec php php artisan migrate:status
+	@echo "$(GREEN)✅ Checklist concluído!$(NC)"
+
+deploy-production: ## Workflow de deploy para produção
+	@echo "$(RED)🚀 Deploy para PRODUÇÃO$(NC)"
+	@read -p "Confirma deploy? [s/N]: " confirm; \
+	if [ "$$confirm" = "s" ] || [ "$$confirm" = "S" ]; then \
+		echo "$(YELLOW)1/6 Executando testes...$(NC)"; \
+		$(MAKE) test; \
+		echo "$(YELLOW)2/6 Fazendo backup...$(NC)"; \
+		$(MAKE) backup-db; \
+		echo "$(YELLOW)3/6 Atualizando dependências...$(NC)"; \
+		$(MAKE) composer-install; \
+		echo "$(YELLOW)4/6 Executando migrations...$(NC)"; \
+		$(MAKE) migrate; \
+		echo "$(YELLOW)5/6 Otimizando...$(NC)"; \
+		$(MAKE) production-ready; \
+		echo "$(YELLOW)6/6 Reiniciando serviços...$(NC)"; \
+		$(MAKE) restart; \
+		echo "$(GREEN)✅ Deploy concluído com sucesso!$(NC)"; \
+	else \
+		echo "Deploy cancelado."; \
+	fi
+
+
+##@ 🏗️  Montagem de Ambiente Automática
+
+check-structure: ## Verifica e cria estrutura de pastas necessárias
+	@echo "$(YELLOW)🔍 Verificando estrutura...$(NC)"
+	@mkdir -p backend/storage/logs
+	@mkdir -p backend/storage/framework/cache
+	@mkdir -p backend/storage/framework/sessions
+	@mkdir -p backend/storage/framework/views
+	@mkdir -p backend/bootstrap/cache
+	@mkdir -p backups
+	@echo "$(GREEN)✅ Estrutura verificada!$(NC)"
+
+create-env-from-compose: ## Cria .env baseado no docker-compose.yml
+	@echo "$(YELLOW)📝 Criando .env a partir do docker-compose.yml...$(NC)"
+	@if [ ! -f backend/.env ]; then \
+		cp backend/.env.example backend/.env; \
+		echo "" >> backend/.env; \
+		echo "# Configurações dos Containers" >> backend/.env; \
+		echo "DB_HOST=mysql" >> backend/.env; \
+		echo "DB_PORT=3306" >> backend/.env; \
+		echo "DB_DATABASE=db_laravel" >> backend/.env; \
+		echo "DB_USERNAME=developer" >> backend/.env; \
+		echo "DB_PASSWORD=123456" >> backend/.env; \
+		echo "REDIS_HOST=redis" >> backend/.env; \
+		echo "REDIS_PORT=6379" >> backend/.env; \
+		echo "MAIL_MAILER=smtp" >> backend/.env; \
+		echo "MAIL_HOST=mailer" >> backend/.env; \
+		echo "MAIL_PORT=1025" >> backend/.env; \
+		echo "MAIL_ENCRYPTION=null" >> backend/.env; \
+		echo "$(GREEN)✅ .env criado com configurações dos containers!$(NC)"; \
+	else \
+		echo "$(YELLOW).env já existe$(NC)"; \
+	fi
+
+sync-env-with-compose: ## Sincroniza .env existente com docker-compose.yml
+	@echo "$(YELLOW)🔄 Sincronizando .env com containers...$(NC)"
+	@if [ -f backend/.env ]; then \
+		sed -i.bak 's/^DB_HOST=.*/DB_HOST=mysql/' backend/.env; \
+		sed -i.bak 's/^DB_DATABASE=.*/DB_DATABASE=db_laravel/' backend/.env; \
+		sed -i.bak 's/^DB_USERNAME=.*/DB_USERNAME=developer/' backend/.env; \
+		sed -i.bak 's/^DB_PASSWORD=.*/DB_PASSWORD=123456/' backend/.env; \
+		sed -i.bak 's/^REDIS_HOST=.*/REDIS_HOST=redis/' backend/.env; \
+		sed -i.bak 's/^MAIL_HOST=.*/MAIL_HOST=mailer/' backend/.env; \
+		rm -f backend/.env.bak; \
+		echo "$(GREEN)✅ .env sincronizado!$(NC)"; \
+	else \
+		echo "$(RED)❌ .env não encontrado!$(NC)"; \
+		echo "$(YELLOW)Use: make create-env-from-compose$(NC)"; \
+	fi
+
+environment-setup: ## Setup completo do ambiente (containers + Laravel)
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)🏗️  Montando Ambiente Completo$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)📦 1/8 Verificando estrutura de pastas...$(NC)"
+	$(MAKE) check-structure
+	@echo ""
+	@echo "$(YELLOW)🐳 2/8 Subindo containers...$(NC)"
+	docker compose up -d
+	@echo ""
+	@echo "$(YELLOW)⏳ 3/8 Aguardando containers ficarem prontos...$(NC)"
+	@sleep 10
+	$(MAKE) health
+	@echo ""
+	@echo "$(YELLOW)📝 4/8 Configurando .env...$(NC)"
+	$(MAKE) create-env-from-compose
+	@echo ""
+	@echo "$(YELLOW)📦 5/8 Instalando dependências...$(NC)"
+	docker compose exec php composer install
+	@echo ""
+	@echo "$(YELLOW)🔑 6/8 Gerando chave da aplicação...$(NC)"
+	docker compose exec php php artisan key:generate
+	@echo ""
+	@echo "$(YELLOW)🗄️  7/8 Configurando banco de dados...$(NC)"
+	docker compose exec php php artisan migrate
+	@echo ""
+	@echo "$(YELLOW)🔗 8/8 Configurando storage...$(NC)"
+	docker compose exec php php artisan storage:link
+	@echo ""
+	@echo "$(GREEN)✅ Ambiente montado com sucesso!$(NC)"
+	@echo ""
+	$(MAKE) info
+
+auto-config: ## Configura automaticamente todos os serviços
+	@echo "$(GREEN)⚙️  Configuração automática dos serviços...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)🐘 Configurando PHP...$(NC)"
+	@docker compose exec php php -v | head -1
+	@echo ""
+	@echo "$(YELLOW)🗄️  Testando MySQL...$(NC)"
+	@docker compose exec mysql mysqladmin -u root -proot ping && echo "$(GREEN)✓ MySQL OK$(NC)" || echo "$(RED)✗ MySQL com problema$(NC)"
+	@echo ""
+	@echo "$(YELLOW)🔴 Testando Redis...$(NC)"
+	@docker compose exec redis redis-cli ping && echo "$(GREEN)✓ Redis OK$(NC)" || echo "$(RED)✗ Redis com problema$(NC)"
+	@echo ""
+	@echo "$(YELLOW)🌐 Testando Nginx...$(NC)"
+	@docker compose exec nginx nginx -t 2>&1 && echo "$(GREEN)✓ Nginx OK$(NC)" || echo "$(RED)✗ Nginx com problema$(NC)"
+	@echo ""
+	@echo "$(GREEN)✅ Configuração concluída!$(NC)"
+
+validate-containers: ## Valida se todos containers estão configurados corretamente
+	@echo "$(YELLOW)🔍 Validando containers...$(NC)"
+	@echo ""
+	@echo "$(BLUE)Container PHP:$(NC)"
+	@docker compose exec php php --version | head -1
+	@docker compose exec php composer --version | head -1
+	@echo ""
+	@echo "$(BLUE)Container MySQL:$(NC)"
+	@docker compose exec mysql mysql --version
+	@docker compose exec mysql mysql -u root -proot -e "SELECT VERSION();" 2>/dev/null || echo "$(RED)Erro ao conectar$(NC)"
+	@echo ""
+	@echo "$(BLUE)Container Redis:$(NC)"
+	@docker compose exec redis redis-server --version
+	@docker compose exec redis redis-cli info server | grep redis_version
+	@echo ""
+	@echo "$(BLUE)Container Nginx:$(NC)"
+	@docker compose exec nginx nginx -v 2>&1
+	@echo ""
+	@echo "$(GREEN)✅ Validação concluída!$(NC)"
+
+show-container-config: ## Mostra configuração atual dos containers
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)📋 Configuração dos Containers$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)🐘 PHP:$(NC)"
+	@echo "  Container: setup-laravel-php"
+	@echo "  Volume: ./backend → /var/www"
+	@docker compose exec php php -r "echo '  PHP Version: ' . PHP_VERSION . PHP_EOL;" 2>/dev/null || echo "  Container não está rodando"
+	@echo ""
+	@echo "$(YELLOW)🗄️  MySQL:$(NC)"
+	@echo "  Container: setup-laravel-mysql"
+	@echo "  Database: db_laravel"
+	@echo "  Port: 3306"
+	@echo "  User: developer / root"
+	@docker compose exec mysql mysql --version 2>/dev/null || echo "  Container não está rodando"
+	@echo ""
+	@echo "$(YELLOW)🔴 Redis:$(NC)"
+	@echo "  Container: setup-laravel-redis"
+	@echo "  Port: 6379"
+	@docker compose exec redis redis-cli INFO server 2>/dev/null | grep redis_version || echo "  Container não está rodando"
+	@echo ""
+	@echo "$(YELLOW)🌐 Nginx:$(NC)"
+	@echo "  Container: setup-laravel-nginx"
+	@echo "  Ports: 8080:80, 443:443"
+	@docker compose exec nginx nginx -v 2>&1 || echo "  Container não está rodando"
+	@echo ""
+	@echo "$(YELLOW)📧 Mailpit:$(NC)"
+	@echo "  Container: setup-laravel-mailer"
+	@echo "  Web UI: http://localhost:32770"
+	@echo "  SMTP: 1025"
+
+inspect-compose: ## Analisa docker-compose.yml e mostra serviços
+	@echo "$(BLUE)📋 Serviços definidos no docker-compose.yml:$(NC)"
+	@echo ""
+	@docker compose config --services
+	@echo ""
+	@echo "$(BLUE)🔍 Detalhes dos containers:$(NC)"
+	@docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+	@echo ""
+	@echo "$(BLUE)📊 Networks:$(NC)"
+	@docker compose config --format json | grep -o '"setup-laravel-network"' | uniq || echo "setup-laravel-network"
+	@echo ""
+	@echo "$(BLUE)💾 Volumes:$(NC)"
+	@docker compose config --volumes
+
+init-project: ## Inicializa projeto do zero (primeira vez) 🌟
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)🎉 Inicializando Projeto Laravel com Docker$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Este comando vai:$(NC)"
+	@echo "  1. Criar estrutura de pastas"
+	@echo "  2. Construir e iniciar containers"
+	@echo "  3. Configurar .env com dados dos containers"
+	@echo "  4. Instalar dependências"
+	@echo "  5. Configurar Laravel"
+	@echo "  6. Executar migrations"
+	@echo ""
+	@read -p "Continuar? [s/N]: " confirm; \
+	if [ "$$confirm" = "s" ] || [ "$$confirm" = "S" ]; then \
+		$(MAKE) environment-setup; \
+		echo ""; \
+		echo "$(GREEN)🎉 Projeto inicializado com sucesso!$(NC)"; \
+		echo ""; \
+		echo "$(YELLOW)Acesse:$(NC)"; \
+		echo "  Aplicação: http://localhost:8080"; \
+		echo "  Mailpit: http://localhost:32770"; \
+		echo ""; \
+		echo "$(YELLOW)Comandos úteis:$(NC)"; \
+		echo "  make help        - Ver todos comandos"; \
+		echo "  make bash        - Acessar container PHP"; \
+		echo "  make db          - Acessar MySQL"; \
+		echo "  make logs        - Ver logs"; \
+	else \
+		echo "Cancelado."; \
+	fi
+
+verify-environment: ## Verifica se o ambiente está pronto para uso
+	@echo "$(BLUE)🔍 Verificando ambiente...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)1. Verificando Docker...$(NC)"
+	@docker --version || (echo "$(RED)Docker não instalado$(NC)" && exit 1)
+	@echo "$(GREEN)✓ Docker OK$(NC)"
+	@echo ""
+	@echo "$(YELLOW)2. Verificando Docker Compose...$(NC)"
+	@docker compose version || (echo "$(RED)Docker Compose não instalado$(NC)" && exit 1)
+	@echo "$(GREEN)✓ Docker Compose OK$(NC)"
+	@echo ""
+	@echo "$(YELLOW)3. Verificando containers...$(NC)"
+	@docker compose ps | grep -q "Up" && echo "$(GREEN)✓ Containers rodando$(NC)" || echo "$(YELLOW)! Containers não estão rodando (use: make up)$(NC)"
+	@echo ""
+	@echo "$(YELLOW)4. Verificando arquivos...$(NC)"
+	@[ -f "docker-compose.yml" ] && echo "$(GREEN)✓ docker-compose.yml OK$(NC)" || echo "$(RED)✗ docker-compose.yml não encontrado$(NC)"
+	@[ -f "backend/.env" ] && echo "$(GREEN)✓ .env OK$(NC)" || echo "$(YELLOW)! .env não encontrado (use: make create-env-from-compose)$(NC)"
+	@[ -d "backend/vendor" ] && echo "$(GREEN)✓ Dependências instaladas$(NC)" || echo "$(YELLOW)! Vendor não encontrado (use: make install)$(NC)"
+	@echo ""
+	@echo "$(GREEN)✅ Verificação concluída!$(NC)"
+
+fix-permissions-auto: ## Corrige permissões automaticamente
+	@echo "$(YELLOW)🔐 Corrigindo permissões...$(NC)"
+	docker compose exec php chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+	docker compose exec php chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+	@echo "$(GREEN)✅ Permissões corrigidas!$(NC)"
+
+container-health-check: ## Verifica saúde de cada container individualmente
+	@echo "$(BLUE)🏥 Health Check Individual dos Containers$(NC)"
+	@echo ""
+	@echo "$(YELLOW)🐘 PHP-FPM:$(NC)"
+	@docker compose exec php php-fpm -t 2>&1 | grep -q "configuration file" && echo "$(GREEN)✓ Healthy$(NC)" || echo "$(RED)✗ Unhealthy$(NC)"
+	@echo ""
+	@echo "$(YELLOW)🗄️  MySQL:$(NC)"
+	@docker compose exec mysql mysqladmin -u root -proot ping 2>/dev/null | grep -q "alive" && echo "$(GREEN)✓ Healthy$(NC)" || echo "$(RED)✗ Unhealthy$(NC)"
+	@echo ""
+	@echo "$(YELLOW)🔴 Redis:$(NC)"
+	@docker compose exec redis redis-cli ping 2>/dev/null | grep -q "PONG" && echo "$(GREEN)✓ Healthy$(NC)" || echo "$(RED)✗ Unhealthy$(NC)"
+	@echo ""
+	@echo "$(YELLOW)🌐 Nginx:$(NC)"
+	@docker compose exec nginx nginx -t 2>&1 | grep -q "successful" && echo "$(GREEN)✓ Healthy$(NC)" || echo "$(RED)✗ Unhealthy$(NC)"
+
+
+##@ 🎯 Aliases Úteis
+
+dev-mode: clear-all optimize-clear ## Modo desenvolvimento (sem cache)
+	@echo "$(GREEN)✅ Modo desenvolvimento ativado!$(NC)"
+
+prod-mode: production-ready ## Modo produção (com cache)
+	@echo "$(GREEN)✅ Modo produção ativado!$(NC)"
+
+fresh-install: down up setup-full ## Instalação limpa completa
+	@echo "$(GREEN)✅ Instalação limpa concluída!$(NC)"
+
