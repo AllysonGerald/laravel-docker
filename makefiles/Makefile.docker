@@ -41,6 +41,14 @@ restart-redis: ## Reinicia apenas o container Redis
 	@echo "$(YELLOW)🔄 Reiniciando Redis...$(NC)"
 	docker compose restart redis
 
+restart-postgres: ## Reinicia apenas o container PostgreSQL
+	@echo "$(YELLOW)🔄 Reiniciando PostgreSQL...$(NC)"
+	docker compose restart postgres
+
+restart-mongodb: ## Reinicia apenas o container MongoDB
+	@echo "$(YELLOW)🔄 Reiniciando MongoDB...$(NC)"
+	docker compose restart mongodb
+
 ps: ## Lista status dos containers
 	docker compose ps
 
@@ -59,6 +67,12 @@ logs-mysql: ## Mostra logs do container MySQL
 logs-redis: ## Mostra logs do container Redis
 	docker compose logs -f redis
 
+logs-postgres: ## Mostra logs do container PostgreSQL
+	docker compose logs -f postgres
+
+logs-mongodb: ## Mostra logs do container MongoDB
+	docker compose logs -f mongodb
+
 
 ##@ 💻 Acesso aos Containers
 
@@ -74,11 +88,23 @@ bash-mysql: ## Acessa bash do container MySQL
 bash-redis: ## Acessa bash do container Redis
 	docker compose exec redis sh
 
+bash-postgres: ## Acessa bash do container PostgreSQL
+	docker compose exec postgres sh
+
+bash-mongodb: ## Acessa bash do container MongoDB
+	docker compose exec mongodb bash
+
 db: ## Conecta ao MySQL (root)
 	docker compose exec mysql mysql -u root -proot
 
 db-dev: ## Conecta ao MySQL (developer)
 	docker compose exec mysql mysql -u developer -p123456 db_laravel
+
+psql: ## Conecta ao PostgreSQL
+	docker compose exec postgres psql -U developer -d db_laravel
+
+mongo: ## Conecta ao MongoDB
+	docker compose exec mongodb mongosh -u developer -p 123456 --authenticationDatabase admin
 
 redis-cli: ## Acessa Redis CLI
 	docker compose exec redis redis-cli

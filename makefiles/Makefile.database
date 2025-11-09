@@ -78,16 +78,16 @@ seed-class: ## Executa um seeder específico
 	docker compose exec php php artisan db:seed --class=$$seeder
 
 
-##@ 💾 Backup & Restore
+##@ 💾 Backup & Restore - MySQL
 
-backup-db: ## Faz backup do banco de dados
-	@echo "$(GREEN)💾 Criando backup do banco...$(NC)"
+backup-db: ## Faz backup do banco MySQL
+	@echo "$(GREEN)💾 Criando backup do MySQL...$(NC)"
 	@mkdir -p backups
 	@timestamp=$$(date +%Y%m%d_%H%M%S); \
-	docker compose exec mysql mysqldump -u root -proot db_laravel > backups/db_backup_$$timestamp.sql && \
-	echo "$(GREEN)✅ Backup salvo em: backups/db_backup_$$timestamp.sql$(NC)"
+	docker compose exec mysql mysqldump -u root -proot db_laravel > backups/mysql_backup_$$timestamp.sql && \
+	echo "$(GREEN)✅ Backup salvo em: backups/mysql_backup_$$timestamp.sql$(NC)"
 
-restore-db: ## Restaura backup do banco
+restore-db: ## Restaura backup do MySQL
 	@echo "$(YELLOW)Arquivos disponíveis em backups/:$(NC)"
 	@ls -lh backups/*.sql 2>/dev/null || echo "Nenhum backup encontrado"
 	@read -p "Nome do arquivo (sem o path): " file; \
@@ -97,5 +97,51 @@ restore-db: ## Restaura backup do banco
 		echo "$(GREEN)✅ Backup restaurado!$(NC)"; \
 	else \
 		echo "$(RED)❌ Arquivo não encontrado!$(NC)"; \
+	fi
+
+
+##@ 💾 Backup & Restore - PostgreSQL
+
+backup-postgres: ## Faz backup do banco PostgreSQL
+	@echo "$(GREEN)💾 Criando backup do PostgreSQL...$(NC)"
+	@mkdir -p backups
+	@timestamp=$$(date +%Y%m%d_%H%M%S); \
+	docker compose exec postgres pg_dump -U developer db_laravel > backups/postgres_backup_$$timestamp.sql && \
+	echo "$(GREEN)✅ Backup salvo em: backups/postgres_backup_$$timestamp.sql$(NC)"
+
+restore-postgres: ## Restaura backup do PostgreSQL
+	@echo "$(YELLOW)Arquivos disponíveis em backups/:$(NC)"
+	@ls -lh backups/*.sql 2>/dev/null || echo "Nenhum backup encontrado"
+	@read -p "Nome do arquivo (sem o path): " file; \
+	if [ -f "backups/$$file" ]; then \
+		echo "$(YELLOW)Restaurando backup...$(NC)"; \
+		docker compose exec -T postgres psql -U developer db_laravel < backups/$$file && \
+		echo "$(GREEN)✅ Backup restaurado!$(NC)"; \
+	else \
+		echo "$(RED)❌ Arquivo não encontrado!$(NC)"; \
+	fi
+
+
+##@ 💾 Backup & Restore - MongoDB
+
+backup-mongodb: ## Faz backup do banco MongoDB
+	@echo "$(GREEN)💾 Criando backup do MongoDB...$(NC)"
+	@mkdir -p backups
+	@timestamp=$$(date +%Y%m%d_%H%M%S); \
+	docker compose exec mongodb mongodump --username=developer --password=123456 --authenticationDatabase=admin --db=db_laravel --out=/tmp/backup && \
+	docker compose cp mongodb:/tmp/backup backups/mongodb_backup_$$timestamp && \
+	echo "$(GREEN)✅ Backup salvo em: backups/mongodb_backup_$$timestamp$(NC)"
+
+restore-mongodb: ## Restaura backup do MongoDB
+	@echo "$(YELLOW)Diretórios disponíveis em backups/:$(NC)"
+	@ls -d backups/mongodb_backup_* 2>/dev/null || echo "Nenhum backup encontrado"
+	@read -p "Nome do diretório (sem o path): " dir; \
+	if [ -d "backups/$$dir" ]; then \
+		echo "$(YELLOW)Restaurando backup...$(NC)"; \
+		docker compose cp backups/$$dir mongodb:/tmp/restore && \
+		docker compose exec mongodb mongorestore --username=developer --password=123456 --authenticationDatabase=admin --db=db_laravel /tmp/restore/db_laravel && \
+		echo "$(GREEN)✅ Backup restaurado!$(NC)"; \
+	else \
+		echo "$(RED)❌ Diretório não encontrado!$(NC)"; \
 	fi
 
