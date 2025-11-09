@@ -9,7 +9,16 @@ make-repository: ## Cria repository pattern (Repository + Interface)
 		docker compose exec php mkdir -p app/Repositories/Contracts; \
 		docker compose exec php mkdir -p app/Repositories; \
 		interface_name="$$(echo $$name | sed 's/Repository//')RepositoryInterface"; \
-		docker compose exec php php artisan make:interface "Repositories/Contracts/$$interface_name"; \
+		echo "$(YELLOW)Criando interface $$interface_name...$(NC)"; \
+		docker compose exec php bash -c "echo '<?php' > app/Repositories/Contracts/$$interface_name.php"; \
+		docker compose exec php bash -c "echo '' >> app/Repositories/Contracts/$$interface_name.php"; \
+		docker compose exec php bash -c "echo 'namespace App\\\Repositories\\\Contracts;' >> app/Repositories/Contracts/$$interface_name.php"; \
+		docker compose exec php bash -c "echo '' >> app/Repositories/Contracts/$$interface_name.php"; \
+		docker compose exec php bash -c "echo 'interface $$interface_name' >> app/Repositories/Contracts/$$interface_name.php"; \
+		docker compose exec php bash -c "echo '{' >> app/Repositories/Contracts/$$interface_name.php"; \
+		docker compose exec php bash -c "echo '    // Define repository methods' >> app/Repositories/Contracts/$$interface_name.php"; \
+		docker compose exec php bash -c "echo '}' >> app/Repositories/Contracts/$$interface_name.php"; \
+		echo "$(YELLOW)Criando repository $$name...$(NC)"; \
 		docker compose exec php bash -c "echo '<?php' > app/Repositories/$$name.php"; \
 		docker compose exec php bash -c "echo '' >> app/Repositories/$$name.php"; \
 		docker compose exec php bash -c "echo 'namespace App\\\Repositories;' >> app/Repositories/$$name.php"; \
@@ -20,7 +29,7 @@ make-repository: ## Cria repository pattern (Repository + Interface)
 		docker compose exec php bash -c "echo '{' >> app/Repositories/$$name.php"; \
 		docker compose exec php bash -c "echo '    // Implement repository methods' >> app/Repositories/$$name.php"; \
 		docker compose exec php bash -c "echo '}' >> app/Repositories/$$name.php"; \
-		echo "$(GREEN)✅ Repository $$name criado em app/Repositories/$(NC)"; \
+		echo "$(GREEN)✅ Repository $$name e Interface $$interface_name criados!$(NC)"; \
 	fi
 
 make-service: ## Cria service pattern (Service class)

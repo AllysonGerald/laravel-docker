@@ -194,10 +194,10 @@ reset-hard: ## Reset completo do ambiente (⚠️ APAGA TUDO!)
 	@echo "$(RED)Isso inclui: banco de dados, cache, volumes, etc.$(NC)"
 	@read -p "Digite 'CONFIRMO' para continuar: " confirm; \
 	if [ "$$confirm" = "CONFIRMO" ]; then \
-		echo "$(YELLOW)Parando containers...$(NC)"; \
+		echo "$(YELLOW)Removendo dados antes de parar containers...$(NC)"; \
+		docker compose exec php rm -rf vendor node_modules storage/logs/* 2>/dev/null || true; \
+		echo "$(YELLOW)Parando containers e removendo volumes...$(NC)"; \
 		docker compose down -v; \
-		echo "$(YELLOW)Removendo dados...$(NC)"; \
-		docker compose exec php rm -rf vendor node_modules storage/logs/*; \
 		echo "$(GREEN)✅ Reset completo realizado!$(NC)"; \
 		echo "$(YELLOW)Execute 'make up' e 'make setup' para reconfigurar$(NC)"; \
 	else \
