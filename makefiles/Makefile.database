@@ -1,0 +1,147 @@
+##@ 🗄️  Banco de Dados - Migrations
+
+migrate: ## Executa migrations pendentes
+	@echo "$(GREEN)🗄️  Executando migrations...$(NC)"
+	docker compose exec php php artisan migrate
+
+migrate-fresh: ## Dropa tudo e recria (⚠️ APAGA DADOS!)
+	@echo "$(RED)⚠️  ATENÇÃO: Isso vai apagar todos os dados!$(NC)"
+	@read -p "Tem certeza? [s/N]: " confirm; \
+	if [ "$$confirm" = "s" ] || [ "$$confirm" = "S" ]; then \
+		docker compose exec php php artisan migrate:fresh; \
+	else \
+		echo "Cancelado."; \
+	fi
+
+migrate-fresh-seed: ## Dropa, recria e popula o banco
+	@echo "$(RED)⚠️  ATENÇÃO: Isso vai apagar todos os dados!$(NC)"
+	@read -p "Tem certeza? [s/N]: " confirm; \
+	if [ "$$confirm" = "s" ] || [ "$$confirm" = "S" ]; then \
+		docker compose exec php php artisan migrate:fresh --seed; \
+	else \
+		echo "Cancelado."; \
+	fi
+
+migrate-refresh: ## Rollback e re-executa todas migrations
+	docker compose exec php php artisan migrate:refresh
+
+migrate-refresh-seed: ## Rollback, re-executa e popula
+	docker compose exec php php artisan migrate:refresh --seed
+
+migrate-rollback: ## Desfaz última migração
+	docker compose exec php php artisan migrate:rollback
+
+migrate-rollback-step: ## Desfaz N migrações
+	@read -p "Quantos steps desfazer? " steps; \
+	docker compose exec php php artisan migrate:rollback --step=$$steps
+
+migrate-reset: ## Desfaz todas as migrações
+	docker compose exec php php artisan migrate:reset
+
+migrate-status: ## Mostra status das migrations
+	docker compose exec php php artisan migrate:status
+
+migrate-install: ## Instala repositório de migrations
+	docker compose exec php php artisan migrate:install
+
+schema-dump: ## Dump do schema do banco de dados
+	docker compose exec php php artisan schema:dump
+
+
+##@ 🗄️  Banco de Dados - Operações
+
+db-show: ## Mostra informações do banco
+	docker compose exec php php artisan db:show
+
+db-table: ## Mostra estrutura de uma tabela
+	@read -p "Nome da tabela: " table; \
+	docker compose exec php php artisan db:table $$table
+
+db-monitor: ## Monitora conexões do banco
+	docker compose exec php php artisan db:monitor
+
+db-wipe: ## Limpa todas as tabelas (⚠️ APAGA DADOS!)
+	@echo "$(RED)⚠️  ATENÇÃO: Isso vai apagar todos os dados!$(NC)"
+	@read -p "Tem certeza? [s/N]: " confirm; \
+	if [ "$$confirm" = "s" ] || [ "$$confirm" = "S" ]; then \
+		docker compose exec php php artisan db:wipe; \
+	else \
+		echo "Cancelado."; \
+	fi
+
+seed: ## Executa todos os seeders
+	@echo "$(GREEN)🌱 Executando seeders...$(NC)"
+	docker compose exec php php artisan db:seed
+
+seed-class: ## Executa um seeder específico
+	@read -p "Nome do seeder: " seeder; \
+	docker compose exec php php artisan db:seed --class=$$seeder
+
+
+##@ 💾 Backup & Restore - MySQL
+
+backup-db: ## Faz backup do banco MySQL
+	@echo "$(GREEN)💾 Criando backup do MySQL...$(NC)"
+	@mkdir -p backups
+	@timestamp=$$(date +%Y%m%d_%H%M%S); \
+	docker compose exec mysql mysqldump -u root -proot db_laravel > backups/mysql_backup_$$timestamp.sql && \
+	echo "$(GREEN)✅ Backup salvo em: backups/mysql_backup_$$timestamp.sql$(NC)"
+
+restore-db: ## Restaura backup do MySQL
+	@echo "$(YELLOW)Arquivos disponíveis em backups/:$(NC)"
+	@ls -lh backups/*.sql 2>/dev/null || echo "Nenhum backup encontrado"
+	@read -p "Nome do arquivo (sem o path): " file; \
+	if [ -f "backups/$$file" ]; then \
+		echo "$(YELLOW)Restaurando backup...$(NC)"; \
+		docker compose exec -T mysql mysql -u root -proot db_laravel < backups/$$file && \
+		echo "$(GREEN)✅ Backup restaurado!$(NC)"; \
+	else \
+		echo "$(RED)❌ Arquivo não encontrado!$(NC)"; \
+	fi
+
+
+##@ 💾 Backup & Restore - PostgreSQL
+
+backup-postgres: ## Faz backup do banco PostgreSQL
+	@echo "$(GREEN)💾 Criando backup do PostgreSQL...$(NC)"
+	@mkdir -p backups
+	@timestamp=$$(date +%Y%m%d_%H%M%S); \
+	docker compose exec postgres pg_dump -U developer db_laravel > backups/postgres_backup_$$timestamp.sql && \
+	echo "$(GREEN)✅ Backup salvo em: backups/postgres_backup_$$timestamp.sql$(NC)"
+
+restore-postgres: ## Restaura backup do PostgreSQL
+	@echo "$(YELLOW)Arquivos disponíveis em backups/:$(NC)"
+	@ls -lh backups/*.sql 2>/dev/null || echo "Nenhum backup encontrado"
+	@read -p "Nome do arquivo (sem o path): " file; \
+	if [ -f "backups/$$file" ]; then \
+		echo "$(YELLOW)Restaurando backup...$(NC)"; \
+		docker compose exec -T postgres psql -U developer db_laravel < backups/$$file && \
+		echo "$(GREEN)✅ Backup restaurado!$(NC)"; \
+	else \
+		echo "$(RED)❌ Arquivo não encontrado!$(NC)"; \
+	fi
+
+
+##@ 💾 Backup & Restore - MongoDB
+
+backup-mongodb: ## Faz backup do banco MongoDB
+	@echo "$(GREEN)💾 Criando backup do MongoDB...$(NC)"
+	@mkdir -p backups
+	@timestamp=$$(date +%Y%m%d_%H%M%S); \
+	docker compose exec mongodb mongodump --username=developer --password=123456 --authenticationDatabase=admin --db=db_laravel --out=/tmp/backup && \
+	docker compose cp mongodb:/tmp/backup backups/mongodb_backup_$$timestamp && \
+	echo "$(GREEN)✅ Backup salvo em: backups/mongodb_backup_$$timestamp$(NC)"
+
+restore-mongodb: ## Restaura backup do MongoDB
+	@echo "$(YELLOW)Diretórios disponíveis em backups/:$(NC)"
+	@ls -d backups/mongodb_backup_* 2>/dev/null || echo "Nenhum backup encontrado"
+	@read -p "Nome do diretório (sem o path): " dir; \
+	if [ -d "backups/$$dir" ]; then \
+		echo "$(YELLOW)Restaurando backup...$(NC)"; \
+		docker compose cp backups/$$dir mongodb:/tmp/restore && \
+		docker compose exec mongodb mongorestore --username=developer --password=123456 --authenticationDatabase=admin --db=db_laravel /tmp/restore/db_laravel && \
+		echo "$(GREEN)✅ Backup restaurado!$(NC)"; \
+	else \
+		echo "$(RED)❌ Diretório não encontrado!$(NC)"; \
+	fi
+

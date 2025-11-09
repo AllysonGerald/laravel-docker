@@ -1,0 +1,35 @@
+##@ 📋 Desenvolvimento
+
+tinker: ## Abre Laravel Tinker (REPL)
+	docker compose exec php php artisan tinker
+
+route-list: ## Lista todas as rotas
+	docker compose exec php php artisan route:list
+
+route-list-full: ## Lista rotas com detalhes completos
+	docker compose exec php php artisan route:list --columns=uri,name,action,middleware
+
+about: ## Mostra informações sobre a aplicação
+	docker compose exec php php artisan about
+
+inspire: ## Mensagem inspiradora
+	docker compose exec php php artisan inspire
+
+docs: ## Abre documentação do Laravel
+	docker compose exec php php artisan docs
+
+channel-list: ## Lista canais de broadcast
+	docker compose exec php php artisan channel:list
+
+lang-publish: ## Publica arquivos de idioma
+	docker compose exec php php artisan lang:publish
+
+auth-clear-resets: ## Limpa tokens de reset de senha expirados
+	docker compose exec php php artisan auth:clear-resets
+
+install-api: ## Instala estrutura de API (Sanctum/Passport)
+	docker compose exec php php artisan install:api
+
+serve: ## Servidor de desenvolvimento PHP
+	docker compose exec php php artisan serve --host=0.0.0.0 --port=8000
+

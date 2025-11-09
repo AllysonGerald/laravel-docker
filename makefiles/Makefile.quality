@@ -1,0 +1,251 @@
+##@ 🔍 Qualidade de Código - PHP Insights
+
+phpinsights-install: ## Instala PHP Insights
+	@echo "$(GREEN)📦 Instalando PHP Insights...$(NC)"
+	docker compose exec php composer require --dev nunomaduro/phpinsights
+	@echo "$(GREEN)✅ PHP Insights instalado!$(NC)"
+	@echo "$(YELLOW)💡 Execute: make phpinsights-analyze$(NC)"
+
+phpinsights-analyze: ## Analisa código com PHP Insights
+	@echo "$(GREEN)🔍 Analisando código com PHP Insights...$(NC)"
+	docker compose exec php ./vendor/bin/phpinsights analyse backend/app --min-quality=80 --min-complexity=80 --min-architecture=80 --min-style=80 || true
+
+phpinsights-analyze-simple: ## Análise simples (sem métricas mínimas)
+	@echo "$(GREEN)🔍 Análise simples com PHP Insights...$(NC)"
+	docker compose exec php ./vendor/bin/phpinsights analyse backend/app
+
+phpinsights-fix: ## Corrige problemas automaticamente (quando possível)
+	@echo "$(YELLOW)🔧 Corrigindo problemas automaticamente...$(NC)"
+	docker compose exec php ./vendor/bin/phpinsights analyse backend/app --fix || true
+
+phpinsights-config: ## Gera arquivo de configuração phpinsights.php
+	@echo "$(GREEN)⚙️  Gerando configuração do PHP Insights...$(NC)"
+	docker compose exec php ./vendor/bin/phpinsights --init || true
+
+
+##@ 🎯 PHPStan - Análise Estática
+
+phpstan-install: ## Instala PHPStan
+	@echo "$(GREEN)📦 Instalando PHPStan...$(NC)"
+	docker compose exec php composer require --dev phpstan/phpstan phpstan/extension-installer
+	@echo "$(GREEN)✅ PHPStan instalado!$(NC)"
+
+phpstan-analyze: ## Analisa código com PHPStan (nível 0)
+	@echo "$(GREEN)🔍 Analisando código com PHPStan...$(NC)"
+	docker compose exec php ./vendor/bin/phpstan analyse backend/app --memory-limit=2G || true
+
+phpstan-analyze-level: ## Analisa com nível específico (0-9)
+	@read -p "Nível de análise (0-9, padrão: 5): " level; \
+	level=$${level:-5}; \
+	echo "$(GREEN)🔍 Analisando com nível $$level...$(NC)"; \
+	docker compose exec php ./vendor/bin/phpstan analyse backend/app --level=$$level --memory-limit=2G || true
+
+phpstan-analyze-strict: ## Análise rigorosa (nível 9)
+	@echo "$(GREEN)🔍 Análise rigorosa com PHPStan (nível 9)...$(NC)"
+	docker compose exec php ./vendor/bin/phpstan analyse backend/app --level=9 --memory-limit=2G || true
+
+phpstan-baseline: ## Gera baseline para ignorar erros existentes
+	@echo "$(YELLOW)📝 Gerando baseline do PHPStan...$(NC)"
+	docker compose exec php ./vendor/bin/phpstan analyse backend/app --generate-baseline --memory-limit=2G || true
+
+phpstan-clear-result-cache: ## Limpa cache de resultados do PHPStan
+	@echo "$(YELLOW)🧹 Limpando cache do PHPStan...$(NC)"
+	docker compose exec php ./vendor/bin/phpstan clear-result-cache || true
+
+
+##@ 🎨 PHP CS Fixer - Formatação de Código
+
+phpcs-install: ## Instala PHP CS Fixer
+	@echo "$(GREEN)📦 Instalando PHP CS Fixer...$(NC)"
+	docker compose exec php composer require --dev friendsofphp/php-cs-fixer
+	@echo "$(GREEN)✅ PHP CS Fixer instalado!$(NC)"
+
+phpcs-check: ## Verifica estilo de código (sem alterar)
+	@echo "$(GREEN)🔍 Verificando estilo de código...$(NC)"
+	docker compose exec php ./vendor/bin/php-cs-fixer fix --dry-run --diff backend/app || true
+
+phpcs-fix: ## Corrige estilo de código automaticamente
+	@echo "$(GREEN)🔧 Corrigindo estilo de código...$(NC)"
+	docker compose exec php ./vendor/bin/php-cs-fixer fix backend/app
+
+phpcs-config: ## Gera arquivo de configuração .php-cs-fixer.php
+	@echo "$(GREEN)⚙️  Gerando configuração do PHP CS Fixer...$(NC)"
+	docker compose exec php ./vendor/bin/php-cs-fixer --init || true
+
+
+##@ 🎨 Laravel Pint - Formatação Moderna
+
+pint-install: ## Instala Laravel Pint
+	@echo "$(GREEN)📦 Instalando Laravel Pint...$(NC)"
+	docker compose exec php composer require --dev laravel/pint
+	@echo "$(GREEN)✅ Laravel Pint instalado!$(NC)"
+
+pint-check: ## Verifica formatação (sem alterar)
+	@echo "$(GREEN)🔍 Verificando formatação com Pint...$(NC)"
+	docker compose exec php ./vendor/bin/pint --test backend/app || true
+
+pint-fix: ## Corrige formatação automaticamente
+	@echo "$(GREEN)🔧 Corrigindo formatação com Pint...$(NC)"
+	docker compose exec php ./vendor/bin/pint backend/app
+
+
+##@ 🐛 PHPMD - PHP Mess Detector
+
+phpmd-install: ## Instala PHPMD
+	@echo "$(GREEN)📦 Instalando PHPMD...$(NC)"
+	docker compose exec php composer require --dev phpmd/phpmd
+	@echo "$(GREEN)✅ PHPMD instalado!$(NC)"
+
+phpmd-analyze: ## Analisa código com PHPMD
+	@echo "$(GREEN)🔍 Analisando código com PHPMD...$(NC)"
+	docker compose exec php ./vendor/bin/phpmd backend/app text codesize,unusedcode,naming,design,controversial,cleancode || true
+
+phpmd-analyze-xml: ## Análise PHPMD em formato XML
+	@read -p "Arquivo de saída (ex: phpmd-report.xml): " file; \
+	echo "$(GREEN)🔍 Gerando relatório XML...$(NC)"; \
+	docker compose exec php ./vendor/bin/phpmd backend/app xml codesize,unusedcode,naming,design,controversial,cleancode > $$file || true
+
+
+##@ 📊 Psalm - Análise Estática Avançada
+
+psalm-install: ## Instala Psalm
+	@echo "$(GREEN)📦 Instalando Psalm...$(NC)"
+	docker compose exec php composer require --dev vimeo/psalm
+	@echo "$(GREEN)✅ Psalm instalado!$(NC)"
+
+psalm-init: ## Inicializa Psalm no projeto
+	@echo "$(GREEN)⚙️  Inicializando Psalm...$(NC)"
+	docker compose exec php ./vendor/bin/psalm --init || true
+
+psalm-analyze: ## Analisa código com Psalm
+	@echo "$(GREEN)🔍 Analisando código com Psalm...$(NC)"
+	docker compose exec php ./vendor/bin/psalm --memory-limit=2G || true
+
+psalm-baseline: ## Gera baseline do Psalm
+	@echo "$(YELLOW)📝 Gerando baseline do Psalm...$(NC)"
+	docker compose exec php ./vendor/bin/psalm --set-baseline=psalm-baseline.xml || true
+
+psalm-clear-cache: ## Limpa cache do Psalm
+	@echo "$(YELLOW)🧹 Limpando cache do Psalm...$(NC)"
+	docker compose exec php ./vendor/bin/psalm --clear-cache || true
+
+
+##@ 🔧 Análise de Complexidade
+
+complexity-check: ## Verifica complexidade ciclomática
+	@echo "$(GREEN)🔍 Verificando complexidade do código...$(NC)"
+	@if command -v phploc > /dev/null 2>&1 || docker compose exec php composer show | grep -q phploc; then \
+		docker compose exec php ./vendor/bin/phploc backend/app || true; \
+	else \
+		echo "$(YELLOW)💡 Instale phploc: make composer-require-dev package=phploc/phploc$(NC)"; \
+	fi
+
+phploc-install: ## Instala phploc (análise de métricas)
+	@echo "$(GREEN)📦 Instalando phploc...$(NC)"
+	docker compose exec php composer require --dev phploc/phploc
+	@echo "$(GREEN)✅ phploc instalado!$(NC)"
+
+phploc-analyze: ## Analisa métricas do código
+	@echo "$(GREEN)📊 Analisando métricas com phploc...$(NC)"
+	docker compose exec php ./vendor/bin/phploc backend/app || true
+
+
+##@ 🛠️ Verificação de Dependências
+
+composer-audit: ## Verifica vulnerabilidades (Composer)
+	@echo "$(GREEN)🔒 Verificando vulnerabilidades...$(NC)"
+	docker compose exec php composer audit
+
+composer-audit-format: ## Auditoria em formato JSON
+	@echo "$(GREEN)🔒 Verificando vulnerabilidades (JSON)...$(NC)"
+	docker compose exec php composer audit --format=json || true
+
+
+##@ 🎯 Workflow Completo de Qualidade
+
+quality-check: ## Executa todas as verificações de qualidade
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)🔍 Verificação Completa de Qualidade$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)1/5 Executando testes...$(NC)"
+	$(MAKE) test || echo "$(YELLOW)⚠️  Testes não passaram$(NC)"
+	@echo ""
+	@echo "$(YELLOW)2/5 Verificando estilo de código...$(NC)"
+	$(MAKE) phpcs-check || echo "$(YELLOW)⚠️  PHP CS Fixer não configurado$(NC)"
+	@echo ""
+	@echo "$(YELLOW)3/5 Analisando com PHPStan...$(NC)"
+	$(MAKE) phpstan-analyze || echo "$(YELLOW)⚠️  PHPStan não configurado$(NC)"
+	@echo ""
+	@echo "$(YELLOW)4/5 Verificando vulnerabilidades...$(NC)"
+	$(MAKE) composer-audit || echo "$(YELLOW)⚠️  Auditoria não disponível$(NC)"
+	@echo ""
+	@echo "$(YELLOW)5/5 Gerando métricas...$(NC)"
+	$(MAKE) phploc-analyze || echo "$(YELLOW)⚠️  phploc não configurado$(NC)"
+	@echo ""
+	@echo "$(GREEN)✅ Verificação de qualidade concluída!$(NC)"
+
+quality-fix: ## Corrige automaticamente problemas de qualidade
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)🔧 Correção Automática de Qualidade$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)1/3 Corrigindo estilo com PHP CS Fixer...$(NC)"
+	$(MAKE) phpcs-fix || echo "$(YELLOW)⚠️  PHP CS Fixer não configurado$(NC)"
+	@echo ""
+	@echo "$(YELLOW)2/3 Corrigindo com PHP Insights...$(NC)"
+	$(MAKE) phpinsights-fix || echo "$(YELLOW)⚠️  PHP Insights não configurado$(NC)"
+	@echo ""
+	@echo "$(YELLOW)3/3 Formatando com Laravel Pint...$(NC)"
+	$(MAKE) pint-fix || echo "$(YELLOW)⚠️  Laravel Pint não configurado$(NC)"
+	@echo ""
+	@echo "$(GREEN)✅ Correção automática concluída!$(NC)"
+
+quality-install-all: ## Instala todas as ferramentas de qualidade
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)📦 Instalando Todas as Ferramentas de Qualidade$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Instalando PHP Insights...$(NC)"
+	$(MAKE) phpinsights-install || true
+	@echo ""
+	@echo "$(YELLOW)Instalando PHPStan...$(NC)"
+	$(MAKE) phpstan-install || true
+	@echo ""
+	@echo "$(YELLOW)Instalando PHP CS Fixer...$(NC)"
+	$(MAKE) phpcs-install || true
+	@echo ""
+	@echo "$(YELLOW)Instalando Laravel Pint...$(NC)"
+	$(MAKE) pint-install || true
+	@echo ""
+	@echo "$(YELLOW)Instalando PHPMD...$(NC)"
+	$(MAKE) phpmd-install || true
+	@echo ""
+	@echo "$(YELLOW)Instalando phploc...$(NC)"
+	$(MAKE) phploc-install || true
+	@echo ""
+	@echo "$(GREEN)✅ Instalação concluída!$(NC)"
+	@echo "$(YELLOW)💡 Execute: make quality-check$(NC)"
+
+
+##@ 📊 Métricas e Relatórios
+
+code-metrics: ## Mostra métricas gerais do código
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)📊 Métricas do Código$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)📁 Arquivos PHP:$(NC)"
+	@find backend/app -name "*.php" 2>/dev/null | wc -l || echo "0"
+	@echo ""
+	@echo "$(YELLOW)📝 Linhas de código (estimado):$(NC)"
+	@find backend/app -name "*.php" -exec cat {} \; 2>/dev/null | wc -l || echo "0"
+	@echo ""
+	@echo "$(YELLOW)🧪 Testes:$(NC)"
+	@find backend/tests -name "*.php" 2>/dev/null | wc -l || echo "0"
+	@echo ""
+	@if docker compose exec php composer show | grep -q phploc; then \
+		echo "$(YELLOW)📊 Análise detalhada:$(NC)"; \
+		docker compose exec php ./vendor/bin/phploc backend/app || true; \
+	fi
+

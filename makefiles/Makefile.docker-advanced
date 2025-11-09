@@ -1,0 +1,278 @@
+##@ 🐳 Docker - Gerenciamento Avançado
+
+docker-stats: ## Mostra uso de recursos dos containers
+	docker stats --no-stream
+
+docker-stats-live: ## Monitora recursos em tempo real
+	docker stats
+
+docker-top-php: ## Mostra processos do container PHP
+	docker compose top php
+
+docker-top-all: ## Mostra processos de todos containers
+	docker compose top
+
+docker-inspect-php: ## Inspeciona container PHP
+	docker compose exec php sh -c "cat /etc/os-release && php -v && composer -V"
+
+docker-inspect-nginx: ## Inspeciona container Nginx
+	docker compose exec nginx sh -c "cat /etc/os-release && nginx -v"
+
+docker-inspect-mysql: ## Inspeciona container MySQL
+	docker compose exec mysql sh -c "mysql --version"
+
+docker-disk: ## Mostra uso de disco do Docker
+	docker system df
+
+docker-disk-verbose: ## Uso de disco detalhado
+	docker system df -v
+
+
+##@ 🗂️  Docker - Volumes
+
+volume-list: ## Lista todos os volumes
+	docker volume ls
+
+volume-inspect: ## Inspeciona volume específico
+	@read -p "Nome do volume: " vol; \
+	docker volume inspect $$vol
+
+volume-prune: ## Remove volumes não utilizados
+	@echo "$(RED)⚠️  ATENÇÃO: Remove volumes não utilizados!$(NC)"
+	@read -p "Confirma? [s/N]: " confirm; \
+	if [ "$$confirm" = "s" ] || [ "$$confirm" = "S" ]; then \
+		docker volume prune; \
+	fi
+
+volume-backup: ## Backup de um volume
+	@read -p "Nome do volume: " vol; \
+	read -p "Nome do arquivo de backup (ex: backup.tar): " file; \
+	docker run --rm -v $$vol:/source -v $$(pwd)/backups:/backup alpine tar czf /backup/$$file -C /source .
+
+volume-restore: ## Restaura backup de volume
+	@read -p "Nome do volume: " vol; \
+	read -p "Nome do arquivo (em backups/): " file; \
+	docker run --rm -v $$vol:/target -v $$(pwd)/backups:/backup alpine sh -c "cd /target && tar xzf /backup/$$file"
+
+
+##@ 🌐 Docker - Networks
+
+network-list: ## Lista networks
+	docker network ls
+
+network-inspect: ## Inspeciona network
+	docker network inspect setup-laravel-network
+
+network-prune: ## Remove networks não utilizadas
+	docker network prune
+
+
+##@ 📦 Docker - Images
+
+image-prune: ## Remove imagens não utilizadas
+	docker image prune
+
+image-prune-all: ## Remove TODAS imagens não usadas
+	@echo "$(RED)⚠️  Remove todas imagens não utilizadas!$(NC)"
+	@read -p "Confirma? [s/N]: " confirm; \
+	if [ "$$confirm" = "s" ] || [ "$$confirm" = "S" ]; then \
+		docker image prune -a; \
+	fi
+
+image-size: ## Mostra tamanho das imagens
+	docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+
+image-list: ## Lista todas imagens
+	docker images
+
+image-list-dangling: ## Lista imagens órfãs (dangling)
+	docker images --filter "dangling=true"
+
+image-remove: ## Remove imagem específica
+	@read -p "ID ou nome:tag da imagem: " img; \
+	docker rmi $$img && echo "$(GREEN)✅ Imagem removida!$(NC)"
+
+image-remove-dangling: ## Remove imagens órfãs (dangling)
+	@echo "$(YELLOW)🗑️  Removendo imagens órfãs...$(NC)"
+	docker image prune -f
+	@echo "$(GREEN)✅ Imagens órfãs removidas!$(NC)"
+
+image-remove-by-name: ## Remove imagens por nome/padrão
+	@read -p "Padrão do nome (ex: setup-laravel-*): " pattern; \
+	docker images --filter "reference=$$pattern" --format "{{.ID}}" | xargs -r docker rmi -f && \
+	echo "$(GREEN)✅ Imagens removidas!$(NC)"
+
+image-remove-project: ## Remove imagens do projeto atual
+	@echo "$(YELLOW)🗑️  Removendo imagens do projeto...$(NC)"
+	@docker compose down --rmi local 2>/dev/null || true
+	@echo "$(GREEN)✅ Imagens do projeto removidas!$(NC)"
+
+image-remove-all: ## Remove TODAS imagens (⚠️ CUIDADO!)
+	@echo "$(RED)⚠️⚠️⚠️  Isso vai remover TODAS as imagens! ⚠️⚠️⚠️$(NC)"
+	@read -p "Digite 'CONFIRMO' para continuar: " confirm; \
+	if [ "$$confirm" = "CONFIRMO" ]; then \
+		docker rmi -f $$(docker images -q) 2>/dev/null || echo "Nenhuma imagem para remover"; \
+		echo "$(GREEN)✅ Todas imagens removidas!$(NC)"; \
+	else \
+		echo "Cancelado."; \
+	fi
+
+pull-latest: ## Atualiza imagens base
+	docker compose pull
+
+
+##@ 📋 Docker - Containers Avançado
+
+container-list-all: ## Lista TODOS containers (incluindo parados)
+	docker ps -a
+
+container-list-stopped: ## Lista apenas containers parados
+	docker ps -a --filter "status=exited"
+
+container-remove-stopped: ## Remove todos containers parados
+	@echo "$(YELLOW)🗑️  Removendo containers parados...$(NC)"
+	docker container prune -f
+	@echo "$(GREEN)✅ Containers parados removidos!$(NC)"
+
+container-remove-all-stopped: ## Remove containers parados (interativo)
+	@echo "$(YELLOW)🗑️  Containers parados:$(NC)"
+	@docker ps -a --filter "status=exited" --format "table {{.ID}}\t{{.Names}}\t{{.Status}}"
+	@echo ""
+	@read -p "Remover todos? [s/N]: " confirm; \
+	if [ "$$confirm" = "s" ] || [ "$$confirm" = "S" ]; then \
+		docker container prune -f; \
+		echo "$(GREEN)✅ Removidos!$(NC)"; \
+	else \
+		echo "Cancelado."; \
+	fi
+
+container-remove: ## Remove container específico
+	@read -p "ID ou nome do container: " name; \
+	docker rm -f $$name && echo "$(GREEN)✅ Container removido!$(NC)"
+
+container-stop-all: ## Para todos containers (projeto atual)
+	docker compose stop
+
+container-remove-all: ## Remove todos containers do projeto
+	@echo "$(RED)⚠️  Isso vai remover TODOS os containers do projeto!$(NC)"
+	@read -p "Tem certeza? [s/N]: " confirm; \
+	if [ "$$confirm" = "s" ] || [ "$$confirm" = "S" ]; then \
+		docker compose down --remove-orphans; \
+		echo "$(GREEN)✅ Containers removidos!$(NC)"; \
+	else \
+		echo "Cancelado."; \
+	fi
+
+container-remove-by-name: ## Remove containers por nome/padrão
+	@read -p "Padrão do nome (ex: setup-laravel-*): " pattern; \
+	docker ps -a --filter "name=$$pattern" --format "{{.ID}}" | xargs -r docker rm -f && \
+	echo "$(GREEN)✅ Containers removidos!$(NC)"
+
+container-inspect-php: ## Inspeciona detalhes do container PHP
+	docker inspect setup-laravel-php
+
+container-logs-since: ## Logs desde determinado tempo
+	@read -p "Container (php/nginx/mysql/redis): " cont; \
+	read -p "Tempo (ex: 10m, 1h, 2024-01-01): " time; \
+	docker compose logs --since $$time $$cont
+
+container-export: ## Exporta filesystem do container
+	@read -p "Container: " cont; \
+	read -p "Nome do arquivo (ex: backup.tar): " file; \
+	docker export setup-laravel-$$cont > $$file
+
+container-diff: ## Mostra mudanças no filesystem
+	@read -p "Container (php/nginx/mysql/redis): " cont; \
+	docker diff setup-laravel-$$cont
+
+
+##@ 📂 Docker - Arquivos & Cópia
+
+copy-to-php: ## Copia arquivo do host para container PHP
+	@read -p "Arquivo local: " src; \
+	read -p "Destino no container: " dest; \
+	docker cp $$src setup-laravel-php:$$dest
+
+copy-from-php: ## Copia arquivo do container PHP para host
+	@read -p "Arquivo no container: " src; \
+	read -p "Destino local: " dest; \
+	docker cp setup-laravel-php:$$src $$dest
+
+copy-env: ## Copia .env para dentro do container
+	docker cp backend/.env setup-laravel-php:/var/www/.env
+
+
+##@ 🔧 Docker - Manutenção
+
+docker-clean: ## Limpeza geral do Docker
+	@echo "$(YELLOW)🧹 Limpando Docker...$(NC)"
+	docker compose down
+	docker system prune -f
+	@echo "$(GREEN)✅ Limpeza concluída!$(NC)"
+
+docker-clean-all: ## Limpeza COMPLETA (⚠️ CUIDADO!)
+	@echo "$(RED)⚠️⚠️⚠️  REMOVE TUDO DO DOCKER! ⚠️⚠️⚠️$(NC)"
+	@read -p "Digite 'CONFIRMO' para continuar: " confirm; \
+	if [ "$$confirm" = "CONFIRMO" ]; then \
+		docker compose down -v; \
+		docker system prune -af --volumes; \
+		echo "$(GREEN)✅ Docker completamente limpo!$(NC)"; \
+	else \
+		echo "Cancelado."; \
+	fi
+
+docker-clean-containers: ## Remove containers parados do sistema
+	@echo "$(YELLOW)🧹 Limpando containers parados...$(NC)"
+	docker container prune -f
+	@echo "$(GREEN)✅ Containers limpos!$(NC)"
+
+docker-clean-images: ## Remove imagens não utilizadas
+	@echo "$(YELLOW)🧹 Limpando imagens não utilizadas...$(NC)"
+	docker image prune -f
+	@echo "$(GREEN)✅ Imagens limpas!$(NC)"
+
+docker-clean-all-images: ## Remove TODAS imagens não utilizadas (com tags)
+	@echo "$(RED)⚠️  Remove todas imagens não utilizadas (incluindo com tags)!$(NC)"
+	@read -p "Confirma? [s/N]: " confirm; \
+	if [ "$$confirm" = "s" ] || [ "$$confirm" = "S" ]; then \
+		docker image prune -a -f; \
+		echo "$(GREEN)✅ Imagens removidas!$(NC)"; \
+	else \
+		echo "Cancelado."; \
+	fi
+
+docker-clean-networks: ## Remove networks não utilizadas
+	@echo "$(YELLOW)🧹 Limpando networks não utilizadas...$(NC)"
+	docker network prune -f
+	@echo "$(GREEN)✅ Networks limpas!$(NC)"
+
+docker-clean-build-cache: ## Remove build cache do Docker
+	@echo "$(YELLOW)🧹 Limpando build cache...$(NC)"
+	docker builder prune -f
+	@echo "$(GREEN)✅ Build cache limpo!$(NC)"
+
+docker-clean-all-cache: ## Remove todo cache do Docker (build + sistema)
+	@echo "$(YELLOW)🧹 Limpando todo cache...$(NC)"
+	docker builder prune -af
+	docker system prune -f
+	@echo "$(GREEN)✅ Cache limpo!$(NC)"
+
+docker-info: ## Mostra informações sobre uso do Docker
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)📊 Informações do Docker$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)💾 Uso de Disco:$(NC)"
+	@docker system df
+	@echo ""
+	@echo "$(YELLOW)🐳 Containers (parados):$(NC)"
+	@docker ps -a --filter "status=exited" --format "table {{.ID}}\t{{.Names}}\t{{.Status}}" || echo "Nenhum container parado"
+	@echo ""
+	@echo "$(YELLOW)🖼️  Imagens (dangling):$(NC)"
+	@docker images --filter "dangling=true" --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}" || echo "Nenhuma imagem órfã"
+
+docker-rebuild: ## Rebuild completo de todas as imagens
+	docker compose down
+	docker compose build --no-cache
+	docker compose up -d
+

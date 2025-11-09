@@ -1,0 +1,216 @@
+##@ 🏗️  Arquitetura Avançada (Padrões)
+
+make-repository: ## Cria repository pattern (Repository + Interface)
+	@read -p "Nome do repository (ex: UserRepository): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando repository $$name...$(NC)"; \
+		docker compose exec php mkdir -p app/Repositories/Contracts; \
+		docker compose exec php mkdir -p app/Repositories; \
+		interface_name="$$(echo $$name | sed 's/Repository//')RepositoryInterface"; \
+		echo "$(YELLOW)Criando interface $$interface_name...$(NC)"; \
+		docker compose exec php bash -c "echo '<?php' > app/Repositories/Contracts/$$interface_name.php"; \
+		docker compose exec php bash -c "echo '' >> app/Repositories/Contracts/$$interface_name.php"; \
+		docker compose exec php bash -c "echo 'namespace App\\\Repositories\\\Contracts;' >> app/Repositories/Contracts/$$interface_name.php"; \
+		docker compose exec php bash -c "echo '' >> app/Repositories/Contracts/$$interface_name.php"; \
+		docker compose exec php bash -c "echo 'interface $$interface_name' >> app/Repositories/Contracts/$$interface_name.php"; \
+		docker compose exec php bash -c "echo '{' >> app/Repositories/Contracts/$$interface_name.php"; \
+		docker compose exec php bash -c "echo '    // Define repository methods' >> app/Repositories/Contracts/$$interface_name.php"; \
+		docker compose exec php bash -c "echo '}' >> app/Repositories/Contracts/$$interface_name.php"; \
+		echo "$(YELLOW)Criando repository $$name...$(NC)"; \
+		docker compose exec php bash -c "echo '<?php' > app/Repositories/$$name.php"; \
+		docker compose exec php bash -c "echo '' >> app/Repositories/$$name.php"; \
+		docker compose exec php bash -c "echo 'namespace App\\\Repositories;' >> app/Repositories/$$name.php"; \
+		docker compose exec php bash -c "echo '' >> app/Repositories/$$name.php"; \
+		docker compose exec php bash -c "echo 'use App\\\Repositories\\\Contracts\\\$$interface_name;' >> app/Repositories/$$name.php"; \
+		docker compose exec php bash -c "echo '' >> app/Repositories/$$name.php"; \
+		docker compose exec php bash -c "echo 'class $$name implements $$interface_name' >> app/Repositories/$$name.php"; \
+		docker compose exec php bash -c "echo '{' >> app/Repositories/$$name.php"; \
+		docker compose exec php bash -c "echo '    // Implement repository methods' >> app/Repositories/$$name.php"; \
+		docker compose exec php bash -c "echo '}' >> app/Repositories/$$name.php"; \
+		echo "$(GREEN)✅ Repository $$name e Interface $$interface_name criados!$(NC)"; \
+	fi
+
+make-service: ## Cria service pattern (Service class)
+	@read -p "Nome do service (ex: UserService): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando service $$name...$(NC)"; \
+		docker compose exec php mkdir -p app/Services; \
+		docker compose exec php php artisan make:class "Services/$$name"; \
+		docker compose exec php bash -c "echo '<?php' > app/Services/$$name.php"; \
+		docker compose exec php bash -c "echo '' >> app/Services/$$name.php"; \
+		docker compose exec php bash -c "echo 'namespace App\\\Services;' >> app/Services/$$name.php"; \
+		docker compose exec php bash -c "echo '' >> app/Services/$$name.php"; \
+		docker compose exec php bash -c "echo 'class $$name' >> app/Services/$$name.php"; \
+		docker compose exec php bash -c "echo '{' >> app/Services/$$name.php"; \
+		docker compose exec php bash -c "echo '    // Service logic' >> app/Services/$$name.php"; \
+		docker compose exec php bash -c "echo '}' >> app/Services/$$name.php"; \
+		echo "$(GREEN)✅ Service $$name criado em app/Services/$(NC)"; \
+	fi
+
+make-action: ## Cria action class (Single Responsibility)
+	@read -p "Nome da action (ex: CreateUserAction): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando action $$name...$(NC)"; \
+		docker compose exec php mkdir -p app/Actions; \
+		docker compose exec php bash -c "echo '<?php' > app/Actions/$$name.php"; \
+		docker compose exec php bash -c "echo '' >> app/Actions/$$name.php"; \
+		docker compose exec php bash -c "echo 'namespace App\\\Actions;' >> app/Actions/$$name.php"; \
+		docker compose exec php bash -c "echo '' >> app/Actions/$$name.php"; \
+		docker compose exec php bash -c "echo 'class $$name' >> app/Actions/$$name.php"; \
+		docker compose exec php bash -c "echo '{' >> app/Actions/$$name.php"; \
+		docker compose exec php bash -c "echo '    public function execute(array \$$data)' >> app/Actions/$$name.php"; \
+		docker compose exec php bash -c "echo '    {' >> app/Actions/$$name.php"; \
+		docker compose exec php bash -c "echo '        // Action logic' >> app/Actions/$$name.php"; \
+		docker compose exec php bash -c "echo '    }' >> app/Actions/$$name.php"; \
+		docker compose exec php bash -c "echo '}' >> app/Actions/$$name.php"; \
+		echo "$(GREEN)✅ Action $$name criada em app/Actions/$(NC)"; \
+	fi
+
+make-dto: ## Cria DTO (Data Transfer Object)
+	@read -p "Nome do DTO (ex: UserDTO): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando DTO $$name...$(NC)"; \
+		docker compose exec php mkdir -p app/DTOs; \
+		docker compose exec php bash -c "echo '<?php' > app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo 'namespace App\\\DTOs;' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo 'class $$name' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '{' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '    public function __construct(' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '        // Add properties' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '    ) {' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '        // Constructor' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '    }' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '    public function toArray(): array' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '    {' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '        return [' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '            // Return array representation' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '        ];' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '    }' >> app/DTOs/$$name.php"; \
+		docker compose exec php bash -c "echo '}' >> app/DTOs/$$name.php"; \
+		echo "$(GREEN)✅ DTO $$name criado em app/DTOs/$(NC)"; \
+	fi
+
+make-resource-collection: ## Cria resource collection
+	@read -p "Nome da collection (ex: UserCollection): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando resource collection $$name...$(NC)"; \
+		docker compose exec php php artisan make:resource $$name --collection; \
+		echo "$(GREEN)✅ Resource collection $$name criada!$(NC)"; \
+	fi
+
+make-resource-full: ## Cria resource completo (single + collection)
+	@read -p "Nome do resource (ex: UserResource): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando resource completo $$name...$(NC)"; \
+		docker compose exec php php artisan make:resource $$name; \
+		docker compose exec php php artisan make:resource $$name --collection; \
+		echo "$(GREEN)✅ Resource completo $$name criado!$(NC)"; \
+	fi
+
+make-form-request-update: ## Cria form request para update
+	@read -p "Nome do request (ex: UpdateUserRequest): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando form request $$name...$(NC)"; \
+		docker compose exec php php artisan make:request $$name; \
+		echo "$(GREEN)✅ Form request $$name criado!$(NC)"; \
+	fi
+
+make-api-resource-full: ## Cria API resource completo (model + controller + resource + request)
+	@read -p "Nome do resource (ex: Post): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando API completa para $$name...$(NC)"; \
+		docker compose exec php php artisan make:model $$name -mfsc; \
+		docker compose exec php php artisan make:controller $$name"Controller" --api; \
+		docker compose exec php php artisan make:resource $$name"Resource"; \
+		docker compose exec php php artisan make:resource $$name"Resource" --collection; \
+		docker compose exec php php artisan make:request Store$$name"Request"; \
+		docker compose exec php php artisan make:request Update$$name"Request"; \
+		echo "$(GREEN)✅ API completa criada para $$name!$(NC)"; \
+		echo "$(YELLOW)Arquivos criados:$(NC)"; \
+		echo "  - Model: app/Models/$$name.php"; \
+		echo "  - Migration: database/migrations/xxx_create_$$(echo $$name | tr '[:upper:]' '[:lower:]')s_table.php"; \
+		echo "  - Factory: database/factories/$$name"Factory.php"; \
+		echo "  - Seeder: database/seeders/$$name"Seeder.php"; \
+		echo "  - Controller: app/Http/Controllers/$$name"Controller.php"; \
+		echo "  - Resource: app/Http/Resources/$$name"Resource.php"; \
+		echo "  - Collection: app/Http/Resources/$$name"ResourceCollection.php"; \
+		echo "  - StoreRequest: app/Http/Requests/Store$$name"Request.php"; \
+		echo "  - UpdateRequest: app/Http/Requests/Update$$name"Request.php"; \
+	fi
+
+make-module: ## Cria estrutura de módulo (Module pattern)
+	@read -p "Nome do módulo (ex: Blog): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando módulo $$name...$(NC)"; \
+		docker compose exec php mkdir -p app/Modules/$$name/{Controllers,Models,Requests,Resources,Services,Repositories}; \
+		docker compose exec php php artisan make:model "Modules/$$name/Models/$$name"; \
+		docker compose exec php php artisan make:controller "Modules/$$name/Controllers/$$name"Controller --api; \
+		docker compose exec php php artisan make:resource "Modules/$$name/Resources/$$name"Resource; \
+		echo "$(GREEN)✅ Módulo $$name criado em app/Modules/$$name/$(NC)"; \
+	fi
+
+make-event-listener-full: ## Cria event + listener completo
+	@read -p "Nome do event (ex: UserCreated): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando event + listener $$name...$(NC)"; \
+		docker compose exec php php artisan make:event $$name; \
+		listener_name="$$(echo $$name | sed 's/Event//')Listener"; \
+		docker compose exec php php artisan make:listener $$listener_name --event=$$name; \
+		echo "$(GREEN)✅ Event $$name e Listener $$listener_name criados!$(NC)"; \
+	fi
+
+make-queue-job-full: ## Cria job com queue completo
+	@read -p "Nome do job (ex: SendEmailJob): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando job $$name...$(NC)"; \
+		docker compose exec php php artisan make:job $$name --queued; \
+		echo "$(GREEN)✅ Job $$name criado com suporte a queue!$(NC)"; \
+	fi
+
+make-policy-model: ## Cria policy para um model
+	@read -p "Nome do model (ex: Post): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando policy para $$name...$(NC)"; \
+		docker compose exec php php artisan make:policy $$name"Policy" --model=$$name; \
+		echo "$(GREEN)✅ Policy $$name"Policy criada!$(NC)"; \
+	fi
+
+make-observable-model: ## Cria model com observer
+	@read -p "Nome do model (ex: User): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando model $$name com observer...$(NC)"; \
+		docker compose exec php php artisan make:model $$name -m; \
+		observer_name="$$name"Observer; \
+		docker compose exec php php artisan make:observer $$observer_name --model=$$name; \
+		echo "$(GREEN)✅ Model $$name e Observer $$observer_name criados!$(NC)"; \
+	fi
+

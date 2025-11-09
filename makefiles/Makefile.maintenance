@@ -1,0 +1,211 @@
+##@ 🧹 Cache & Otimização
+
+cache-clear: ## Limpa cache da aplicação
+	docker compose exec php php artisan cache:clear
+
+cache-forget: ## Remove item específico do cache
+	@read -p "Chave do cache: " key; \
+	docker compose exec php php artisan cache:forget $$key
+
+cache-prune-tags: ## Remove tags stale do cache (Redis)
+	docker compose exec php php artisan cache:prune-stale-tags
+
+config-clear: ## Limpa cache de configuração
+	docker compose exec php php artisan config:clear
+
+config-publish: ## Publica arquivos de configuração
+	docker compose exec php php artisan config:publish
+
+route-clear: ## Limpa cache de rotas
+	docker compose exec php php artisan route:clear
+
+view-clear: ## Limpa cache de views
+	docker compose exec php php artisan view:clear
+
+event-clear: ## Limpa cache de eventos
+	docker compose exec php php artisan event:clear
+
+event-list: ## Lista eventos e listeners
+	docker compose exec php php artisan event:list
+
+clear-compiled: ## Remove arquivo de classe compilada
+	docker compose exec php php artisan clear-compiled
+
+clear-all: ## Limpa TODOS os caches
+	@echo "$(GREEN)🧹 Limpando todos os caches...$(NC)"
+	docker compose exec php php artisan optimize:clear
+	docker compose exec php php artisan cache:clear
+	docker compose exec php php artisan config:clear
+	docker compose exec php php artisan route:clear
+	docker compose exec php php artisan view:clear
+	docker compose exec php php artisan event:clear
+	@echo "$(GREEN)✅ Todos os caches limpos!$(NC)"
+
+optimize: ## Otimiza aplicação (produção)
+	@echo "$(GREEN)⚡ Otimizando aplicação...$(NC)"
+	docker compose exec php php artisan optimize
+
+optimize-clear: ## Remove todas otimizações
+	docker compose exec php php artisan optimize:clear
+
+config-cache: ## Cria cache de configuração
+	docker compose exec php php artisan config:cache
+
+route-cache: ## Cria cache de rotas
+	docker compose exec php php artisan route:cache
+
+event-cache: ## Cria cache de eventos
+	docker compose exec php php artisan event:cache
+
+production-ready: ## Prepara app para produção
+	@echo "$(GREEN)🚀 Preparando para produção...$(NC)"
+	docker compose exec php php artisan config:cache
+	docker compose exec php php artisan route:cache
+	docker compose exec php php artisan view:cache
+	docker compose exec php php artisan event:cache
+	docker compose exec php php artisan optimize
+	@echo "$(GREEN)✅ Aplicação otimizada para produção!$(NC)"
+
+
+##@ 🔑 Chaves & Segurança
+
+key-generate: ## Gera nova chave da aplicação
+	docker compose exec php php artisan key:generate
+
+storage-link: ## Cria link simbólico de storage
+	docker compose exec php php artisan storage:link
+
+storage-unlink: ## Remove link simbólico de storage
+	docker compose exec php php artisan storage:unlink
+
+permissions: ## Corrige permissões do Laravel
+	@echo "$(YELLOW)🔐 Corrigindo permissões...$(NC)"
+	docker compose exec php chmod -R 775 storage bootstrap/cache
+	docker compose exec php chown -R www-data:www-data storage bootstrap/cache
+	@echo "$(GREEN)✅ Permissões corrigidas!$(NC)"
+
+
+##@ 📊 Logs & Monitoramento
+
+logs-laravel: ## Tail logs do Laravel
+	docker compose exec php tail -f storage/logs/laravel.log
+
+pail: ## Tail logs usando Pail (Laravel 12+)
+	docker compose exec php php artisan pail
+
+logs-laravel-clear: ## Limpa logs do Laravel
+	docker compose exec php sh -c "> storage/logs/laravel.log"
+	@echo "$(GREEN)✅ Logs limpos!$(NC)"
+
+logs-mysql-error: ## Mostra error log do MySQL
+	docker compose exec mysql tail -f /var/log/mysql/error.log
+
+logs-mysql-general: ## Mostra general log do MySQL
+	docker compose exec mysql tail -f /var/lib/mysql/general.log
+
+logs-nginx-access: ## Mostra access log do Nginx
+	docker compose exec nginx tail -f /var/log/nginx/access.log
+
+logs-nginx-error: ## Mostra error log do Nginx
+	docker compose exec nginx tail -f /var/log/nginx/error.log
+
+
+##@ 🔧 Manutenção
+
+maintenance-on: ## Ativa modo de manutenção
+	@echo "$(YELLOW)🚧 Ativando modo de manutenção...$(NC)"
+	docker compose exec php php artisan down
+	@echo "$(GREEN)✅ Modo de manutenção ativado!$(NC)"
+
+maintenance-off: ## Desativa modo de manutenção
+	@echo "$(GREEN)✅ Desativando modo de manutenção...$(NC)"
+	docker compose exec php php artisan up
+	@echo "$(GREEN)✅ Aplicação disponível novamente!$(NC)"
+
+maintenance-secret: ## Ativa manutenção com secret
+	@read -p "Secret (token para bypass): " secret; \
+	docker compose exec php php artisan down --secret=$$secret && \
+	echo "$(GREEN)Acesse com: ?secret=$$secret$(NC)"
+
+
+##@ 📈 Status & Health
+
+status: ## Mostra status completo do ambiente
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)📊 Status do Ambiente Laravel$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)🐳 Containers:$(NC)"
+	@docker compose ps
+	@echo ""
+	@echo "$(YELLOW)📦 Aplicação:$(NC)"
+	@docker compose exec php php artisan about
+	@echo ""
+	@echo "$(YELLOW)🗄️  Migrations:$(NC)"
+	@docker compose exec php php artisan migrate:status
+
+health: ## Check de saúde completo
+	@echo "$(GREEN)🏥 Health Check...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Testando MySQL...$(NC)"
+	@docker compose exec mysql mysqladmin -u root -proot ping 2>/dev/null && echo "$(GREEN)✓ MySQL OK$(NC)" || echo "$(YELLOW)⚠ MySQL não está rodando$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Testando Redis...$(NC)"
+	@docker compose exec redis redis-cli ping 2>/dev/null && echo "$(GREEN)✓ Redis OK$(NC)" || echo "$(RED)❌ Redis com problema$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Testando PHP-FPM...$(NC)"
+	@docker compose exec php php -v | head -1 || echo "$(RED)❌ PHP com problema$(NC)"
+	@echo ""
+	@echo "$(GREEN)✅ Health check concluído!$(NC)"
+
+info: ## Mostra informações do ambiente
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)ℹ️  Informações do Ambiente$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)🌐 URLs:$(NC)"
+	@echo "  Aplicação: http://localhost:8080"
+	@echo "  Mailpit:   http://localhost:32770"
+	@echo ""
+	@echo "$(YELLOW)🗄️  MySQL:$(NC)"
+	@echo "  Host:     localhost (ou mysql dentro dos containers)"
+	@echo "  Port:     3306"
+	@echo "  Database: db_laravel"
+	@echo "  User:     developer"
+	@echo "  Password: 123456"
+	@echo ""
+	@echo "$(YELLOW)🔴 Redis:$(NC)"
+	@echo "  Host: localhost (ou redis dentro dos containers)"
+	@echo "  Port: 6379"
+	@echo ""
+
+
+##@ 🧼 Limpeza & Reset
+
+clean: ## Limpa arquivos temporários
+	@echo "$(GREEN)🧼 Limpando arquivos temporários...$(NC)"
+	docker compose exec php rm -rf storage/framework/cache/*
+	docker compose exec php rm -rf storage/framework/sessions/*
+	docker compose exec php rm -rf storage/framework/views/*
+	@echo "$(GREEN)✅ Limpeza concluída!$(NC)"
+
+reset-hard: ## Reset completo do ambiente (⚠️ APAGA TUDO!)
+	@echo "$(RED)⚠️⚠️⚠️  ATENÇÃO: Isso vai APAGAR TODOS OS DADOS! ⚠️⚠️⚠️$(NC)"
+	@echo "$(RED)Isso inclui: banco de dados, cache, volumes, etc.$(NC)"
+	@read -p "Digite 'CONFIRMO' para continuar: " confirm; \
+	if [ "$$confirm" = "CONFIRMO" ]; then \
+		echo "$(YELLOW)Removendo dados antes de parar containers...$(NC)"; \
+		docker compose exec php rm -rf vendor node_modules storage/logs/* 2>/dev/null || true; \
+		echo "$(YELLOW)Parando containers e removendo volumes...$(NC)"; \
+		docker compose down -v; \
+		echo "$(GREEN)✅ Reset completo realizado!$(NC)"; \
+		echo "$(YELLOW)Execute 'make up' e 'make setup' para reconfigurar$(NC)"; \
+	else \
+		echo "Cancelado."; \
+	fi
+
+prune: ## Remove containers, volumes e imagens não utilizados
+	@echo "$(YELLOW)🧹 Limpando Docker...$(NC)"
+	docker system prune -af --volumes
+	@echo "$(GREEN)✅ Docker limpo!$(NC)"
+

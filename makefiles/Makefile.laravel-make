@@ -1,0 +1,146 @@
+##@ 🛠️  Criação de Arquivos (Make)
+
+make-controller: ## Cria controller
+	@read -p "Nome do controller: " name; \
+	docker compose exec php php artisan make:controller $$name
+
+make-controller-resource: ## Cria resource controller
+	@read -p "Nome do controller: " name; \
+	docker compose exec php php artisan make:controller $$name --resource
+
+make-controller-api: ## Cria API controller
+	@read -p "Nome do controller: " name; \
+	docker compose exec php php artisan make:controller $$name --api
+
+make-model: ## Cria model
+	@read -p "Nome do model: " name; \
+	docker compose exec php php artisan make:model $$name
+
+make-model-full: ## Cria model completo (migration, factory, seeder, controller)
+	@read -p "Nome do model: " name; \
+	docker compose exec php php artisan make:model $$name -mfsc
+
+make-model-all: ## Cria model com tudo
+	@read -p "Nome do model: " name; \
+	docker compose exec php php artisan make:model $$name --all
+
+make-migration: ## Cria migration
+	@read -p "Nome da migration: " name; \
+	docker compose exec php php artisan make:migration $$name
+
+make-seeder: ## Cria seeder
+	@read -p "Nome do seeder: " name; \
+	docker compose exec php php artisan make:seeder $$name
+
+make-factory: ## Cria factory
+	@read -p "Nome da factory: " name; \
+	docker compose exec php php artisan make:factory $$name
+
+make-middleware: ## Cria middleware
+	@read -p "Nome do middleware: " name; \
+	docker compose exec php php artisan make:middleware $$name
+
+make-request: ## Cria form request
+	@read -p "Nome do request: " name; \
+	docker compose exec php php artisan make:request $$name
+
+make-resource: ## Cria API resource
+	@read -p "Nome do resource: " name; \
+	docker compose exec php php artisan make:resource $$name
+
+make-policy: ## Cria policy
+	@read -p "Nome da policy: " name; \
+	docker compose exec php php artisan make:policy $$name
+
+make-rule: ## Cria validation rule
+	@read -p "Nome da rule: " name; \
+	docker compose exec php php artisan make:rule $$name
+
+make-job: ## Cria job
+	@read -p "Nome do job: " name; \
+	docker compose exec php php artisan make:job $$name
+
+make-event: ## Cria event
+	@read -p "Nome do event: " name; \
+	docker compose exec php php artisan make:event $$name
+
+make-listener: ## Cria listener
+	@read -p "Nome do listener: " name; \
+	docker compose exec php php artisan make:listener $$name
+
+make-mail: ## Cria mailable
+	@read -p "Nome do mail: " name; \
+	docker compose exec php php artisan make:mail $$name
+
+make-notification: ## Cria notification
+	@read -p "Nome da notification: " name; \
+	docker compose exec php php artisan make:notification $$name
+
+make-observer: ## Cria observer
+	@read -p "Nome do observer: " name; \
+	docker compose exec php php artisan make:observer $$name
+
+make-provider: ## Cria service provider
+	@read -p "Nome do provider: " name; \
+	docker compose exec php php artisan make:provider $$name
+
+make-command: ## Cria artisan command
+	@read -p "Nome do command: " name; \
+	docker compose exec php php artisan make:command $$name
+
+make-test: ## Cria test
+	@read -p "Nome do test: " name; \
+	docker compose exec php php artisan make:test $$name
+
+make-test-unit: ## Cria unit test
+	@read -p "Nome do test: " name; \
+	docker compose exec php php artisan make:test $$name --unit
+
+make-component: ## Cria Blade component
+	@read -p "Nome do component: " name; \
+	docker compose exec php php artisan make:component $$name
+
+make-cast: ## Cria custom cast
+	@read -p "Nome do cast: " name; \
+	docker compose exec php php artisan make:cast $$name
+
+make-channel: ## Cria broadcast channel
+	@read -p "Nome do channel: " name; \
+	docker compose exec php php artisan make:channel $$name
+
+make-exception: ## Cria exception
+	@read -p "Nome da exception: " name; \
+	docker compose exec php php artisan make:exception $$name
+
+make-class: ## Cria classe genérica
+	@read -p "Nome da classe: " name; \
+	docker compose exec php php artisan make:class $$name
+
+make-enum: ## Cria enum
+	@read -p "Nome do enum: " name; \
+	docker compose exec php php artisan make:enum $$name
+
+make-interface: ## Cria interface
+	@read -p "Nome da interface: " name; \
+	docker compose exec php php artisan make:interface $$name
+
+make-trait: ## Cria trait
+	@read -p "Nome do trait: " name; \
+	docker compose exec php php artisan make:trait $$name
+
+make-scope: ## Cria scope para model
+	@read -p "Nome do scope: " name; \
+	docker compose exec php php artisan make:scope $$name
+
+make-view: ## Cria view Blade
+	@read -p "Nome da view: " name; \
+	docker compose exec php php artisan make:view $$name
+
+make-config: ## Cria arquivo de configuração
+	@read -p "Nome do config: " name; \
+	docker compose exec php php artisan make:config $$name
+
+make-job-middleware: ## Cria middleware para jobs
+	@read -p "Nome do job middleware: " name; \
+	docker compose exec php php artisan make:job-middleware $$name
+

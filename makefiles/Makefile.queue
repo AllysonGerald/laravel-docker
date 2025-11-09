@@ -1,0 +1,88 @@
+##@ 🔄 Queue (Filas)
+
+queue-work: ## Processa filas
+	docker compose exec php php artisan queue:work
+
+queue-work-daemon: ## Processa filas em background
+	docker compose exec -d php php artisan queue:work
+
+queue-listen: ## Escuta filas
+	docker compose exec php php artisan queue:listen
+
+queue-restart: ## Reinicia workers
+	docker compose exec php php artisan queue:restart
+
+queue-retry: ## Reprocessa jobs falhados
+	docker compose exec php php artisan queue:retry all
+
+queue-retry-id: ## Reprocessa job específico
+	@read -p "ID do job: " id; \
+	docker compose exec php php artisan queue:retry $$id
+
+queue-retry-batch: ## Reprocessa batch de jobs
+	@read -p "ID do batch: " id; \
+	docker compose exec php php artisan queue:retry-batch $$id
+
+queue-forget: ## Remove job falhado
+	@read -p "ID do job: " id; \
+	docker compose exec php php artisan queue:forget $$id
+
+queue-clear: ## Limpa jobs de uma fila
+	@read -p "Nome da fila (ou deixe vazio para default): " queue; \
+	if [ -z "$$queue" ]; then \
+		docker compose exec php php artisan queue:clear; \
+	else \
+		docker compose exec php php artisan queue:clear $$queue; \
+	fi
+
+queue-flush: ## Limpa jobs falhados
+	docker compose exec php php artisan queue:flush
+
+queue-prune-failed: ## Remove jobs falhados antigos
+	@read -p "Horas (padrão: 24): " hours; \
+	docker compose exec php php artisan queue:prune-failed --hours=$${hours:-24}
+
+queue-prune-batches: ## Remove batches antigos
+	@read -p "Horas (padrão: 24): " hours; \
+	docker compose exec php php artisan queue:prune-batches --hours=$${hours:-24}
+
+queue-failed: ## Lista jobs falhados
+	docker compose exec php php artisan queue:failed
+
+queue-monitor: ## Monitora filas
+	docker compose exec php php artisan queue:monitor
+
+queue-table: ## Cria tabela de jobs
+	docker compose exec php php artisan queue:table
+	docker compose exec php php artisan migrate
+
+queue-failed-table: ## Cria tabela de jobs falhados
+	docker compose exec php php artisan queue:failed-table
+	docker compose exec php php artisan migrate
+
+queue-batches-table: ## Cria tabela de batches
+	docker compose exec php php artisan queue:batches-table
+	docker compose exec php php artisan migrate
+
+
+##@ ⏰ Schedule (Agendamentos)
+
+schedule-run: ## Executa schedule uma vez
+	docker compose exec php php artisan schedule:run
+
+schedule-work: ## Executa schedule continuamente
+	docker compose exec php php artisan schedule:work
+
+schedule-list: ## Lista comandos agendados
+	docker compose exec php php artisan schedule:list
+
+schedule-test: ## Testa schedule
+	@read -p "Comando ou classe: " command; \
+	docker compose exec php php artisan schedule:test $$command
+
+schedule-clear-cache: ## Limpa cache do scheduler
+	docker compose exec php php artisan schedule:clear-cache
+
+schedule-interrupt: ## Interrompe execução atual do scheduler
+	docker compose exec php php artisan schedule:interrupt
+
