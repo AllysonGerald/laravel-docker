@@ -156,30 +156,33 @@ environment-setup: ## Setup completo do ambiente (containers + Laravel)
 	@echo "$(GREEN)🏗️  Montando Ambiente Completo$(NC)"
 	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
 	@echo ""
-	@echo "$(YELLOW)📦 1/8 Verificando estrutura de pastas...$(NC)"
+	@echo "$(YELLOW)📦 1/9 Verificando estrutura de pastas...$(NC)"
 	$(MAKE) check-structure
 	@echo ""
-	@echo "$(YELLOW)🐳 2/8 Subindo containers...$(NC)"
+	@echo "$(YELLOW)🐳 2/9 Subindo containers...$(NC)"
 	docker compose up -d
 	@echo ""
-	@echo "$(YELLOW)⏳ 3/8 Aguardando containers ficarem prontos...$(NC)"
+	@echo "$(YELLOW)⏳ 3/9 Aguardando containers ficarem prontos...$(NC)"
 	@sleep 10
 	$(MAKE) health
 	@echo ""
-	@echo "$(YELLOW)📝 4/8 Configurando .env...$(NC)"
+	@echo "$(YELLOW)📝 4/9 Configurando .env...$(NC)"
 	$(MAKE) create-env-from-compose
 	@echo ""
-	@echo "$(YELLOW)📦 5/8 Instalando dependências...$(NC)"
+	@echo "$(YELLOW)📦 5/9 Instalando dependências...$(NC)"
 	docker compose exec php composer install
 	@echo ""
-	@echo "$(YELLOW)🔑 6/8 Gerando chave da aplicação...$(NC)"
+	@echo "$(YELLOW)🔑 6/9 Gerando chave da aplicação...$(NC)"
 	docker compose exec php php artisan key:generate
 	@echo ""
-	@echo "$(YELLOW)🗄️  7/8 Configurando banco de dados...$(NC)"
+	@echo "$(YELLOW)🗄️  7/9 Configurando banco de dados...$(NC)"
 	docker compose exec php php artisan migrate
 	@echo ""
-	@echo "$(YELLOW)🔗 8/8 Configurando storage...$(NC)"
+	@echo "$(YELLOW)🔗 8/9 Configurando storage...$(NC)"
 	docker compose exec php php artisan storage:link
+	@echo ""
+	@echo "$(YELLOW)🏗️  9/9 Configurando arquitetura de pastas...$(NC)"
+	$(MAKE) setup-architecture
 	@echo ""
 	@echo "$(GREEN)✅ Ambiente montado com sucesso!$(NC)"
 	@echo ""
@@ -280,6 +283,7 @@ init-project: ## Inicializa projeto do zero (primeira vez) 🌟
 	@echo "  4. Instalar dependências"
 	@echo "  5. Configurar Laravel"
 	@echo "  6. Executar migrations"
+	@echo "  7. Criar estrutura de arquitetura (Services, Repositories, etc)"
 	@echo ""
 	@read -p "Continuar? [s/N]: " confirm; \
 	if [ "$$confirm" = "s" ] || [ "$$confirm" = "S" ]; then \
@@ -292,13 +296,14 @@ init-project: ## Inicializa projeto do zero (primeira vez) 🌟
 		echo "  Mailpit: http://localhost:32770"; \
 		echo ""; \
 		echo "$(YELLOW)Comandos úteis:$(NC)"; \
-		echo "  make help        - Ver todos comandos"; \
-		echo "  make bash        - Acessar container PHP"; \
-		echo "  make db          - Acessar MySQL"; \
-		echo "  make psql        - Acessar PostgreSQL"; \
-		echo "  make mongo       - Acessar MongoDB"; \
-		echo "  make redis-cli   - Acessar Redis"; \
-		echo "  make logs        - Ver logs"; \
+		echo "  make help               - Ver todos comandos"; \
+		echo "  make setup-architecture - Criar estrutura de arquitetura"; \
+		echo "  make bash               - Acessar container PHP"; \
+		echo "  make db                 - Acessar MySQL"; \
+		echo "  make psql               - Acessar PostgreSQL"; \
+		echo "  make mongo              - Acessar MongoDB"; \
+		echo "  make redis-cli          - Acessar Redis"; \
+		echo "  make logs               - Ver logs"; \
 	else \
 		echo "Cancelado."; \
 	fi
