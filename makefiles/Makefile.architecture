@@ -1,5 +1,78 @@
 ##@ 🏗️  Arquitetura Avançada (Padrões)
 
+setup-architecture: ## Cria estrutura completa de pastas (Services, Repositories, Actions, etc)
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)  🏗️  Configurando Estrutura de Arquitetura Laravel$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)📋 Estrutura de Camadas:$(NC)"
+	@echo ""
+	@echo "$(CYAN)  app/Http/          $(NC)→ Camada de Transporte (Controllers, Middleware, Requests)"
+	@echo "$(CYAN)  app/Services/      $(NC)→ Camada de Negócio (Regras de negócio complexas)"
+	@echo "$(CYAN)  app/Repositories/  $(NC)→ Camada de Dados (Acesso a Models)"
+	@echo "$(CYAN)  app/Models/        $(NC)→ Camada de Persistência (Eloquent)"
+	@echo "$(CYAN)  app/Actions/       $(NC)→ Ações de Uso Único (Comandos testáveis)"
+	@echo "$(CYAN)  app/Enums/         $(NC)→ Constantes Tipadas (Status, Tipos)"
+	@echo "$(CYAN)  app/Observers/     $(NC)→ Listeners de Eventos de Model"
+	@echo "$(CYAN)  app/Utils/         $(NC)→ Utilitários Genéricos (Helpers)"
+	@echo "$(CYAN)  app/Traits/        $(NC)→ Código Reutilizável (Traits PHP)"
+	@echo ""
+	@echo "$(YELLOW)🔨 Criando estrutura...$(NC)"
+	@echo ""
+	@mkdir -p backups 2>/dev/null || true
+	@docker compose exec php bash -c ' \
+		created=(); \
+		existed=(); \
+		dirs=( \
+			"app/Services" \
+			"app/Repositories" \
+			"app/Repositories/Contracts" \
+			"app/Actions" \
+			"app/Enums" \
+			"app/Observers" \
+			"app/Utils" \
+			"app/Traits" \
+			"app/DTOs" \
+		); \
+		for dir in "$${dirs[@]}"; do \
+			if [ ! -d "$$dir" ]; then \
+				mkdir -p "$$dir"; \
+				touch "$$dir/.gitkeep"; \
+				created+=("$$dir"); \
+			else \
+				existed+=("$$dir"); \
+			fi; \
+		done; \
+		if [ $${#created[@]} -gt 0 ]; then \
+			echo "✅ Criadas ($${#created[@]}):" ; \
+			for dir in "$${created[@]}"; do \
+				echo "   $(GREEN)+ $$dir$(NC)"; \
+			done; \
+		fi; \
+		if [ $${#existed[@]} -gt 0 ]; then \
+			echo ""; \
+			echo "ℹ️  Já existiam ($${#existed[@]}):" ; \
+			for dir in "$${existed[@]}"; do \
+				echo "   $(YELLOW)✓ $$dir$(NC)"; \
+			done; \
+		fi; \
+	' || true
+	@echo ""
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)  ✅ Estrutura de Arquitetura Configurada!$(NC)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@echo "$(YELLOW)📚 Comandos disponíveis para criar componentes:$(NC)"
+	@echo ""
+	@echo "  $(CYAN)make make-service$(NC)           → Criar Service"
+	@echo "  $(CYAN)make make-repository$(NC)        → Criar Repository + Interface"
+	@echo "  $(CYAN)make make-action$(NC)            → Criar Action"
+	@echo "  $(CYAN)make make-dto$(NC)               → Criar DTO"
+	@echo "  $(CYAN)make make-observable-model$(NC)  → Criar Model com Observer"
+	@echo ""
+	@echo "$(GREEN)💡 Use 'make help' para ver todos os comandos disponíveis$(NC)"
+	@echo ""
+
 make-repository: ## Cria repository pattern (Repository + Interface)
 	@read -p "Nome do repository (ex: UserRepository): " name; \
 	if [ -z "$$name" ]; then \
