@@ -39,6 +39,681 @@ O projeto segue uma arquitetura em camadas bem definida, separando responsabilid
 
 ---
 
+## 🎯 Princípios SOLID
+
+Esta arquitetura foi projetada seguindo rigorosamente os **5 princípios SOLID** da programação orientada a objetos:
+
+### 1️⃣ **S** - Single Responsibility Principle (Responsabilidade Única)
+
+**Princípio:** *"Uma classe deve ter um, e somente um, motivo para mudar"*
+
+**Como aplicamos:**
+
+- ✅ **Controllers**: Apenas recebem requisições e delegam para Services
+- ✅ **Services**: Apenas lógica de negócio (um domínio por Service)
+- ✅ **Repositories**: Apenas acesso a dados
+- ✅ **Models**: Apenas representação de dados e relacionamentos
+- ✅ **Actions**: Uma ação específica por classe
+
+**Exemplo:**
+
+```php
+// ❌ ERRADO - Controller com muitas responsabilidades
+class UserController extends Controller
+{
+    public function store(Request $request)
+    {
+        // Validação
+        $validated = $request->validate([...]);
+        
+        // Lógica de negócio
+        $user = User::create($validated);
+        
+        // Envio de email
+        Mail::to($user)->send(new WelcomeEmail($user));
+        
+        // Log
+        Log::info("User created: {$user->id}");
+        
+        return response()->json($user);
+    }
+}
+
+// ✅ CORRETO - Responsabilidades separadas
+class UserController extends Controller
+{
+    public function __construct(private UserService $userService) {}
+    
+    public function store(StoreUserRequest $request) // Validação separada
+    {
+        $user = $this->userService->createUser($request->validated());
+        return new UserResource($user);
+    }
+}
+
+class UserService // Lógica de negócio separada
+{
+    public function createUser(array $data): User
+    {
+        $user = $this->userRepository->create($data);
+        event(new UserCreated($user)); // Eventos separados
+        return $user;
+    }
+}
+```
+
+---
+
+### 2️⃣ **O** - Open/Closed Principle (Aberto/Fechado)
+
+**Princípio:** *"Entidades devem estar abertas para extensão, mas fechadas para modificação"*
+
+**Como aplicamos:**
+
+- ✅ **Interfaces de Repository**: Permite trocar implementação sem alterar código
+- ✅ **Actions**: Novas ações podem ser criadas sem modificar existentes
+- ✅ **Observers**: Novos comportamentos via eventos, sem modificar Models
+- ✅ **Enums**: Extensíveis via métodos, sem quebrar código existente
+
+**Exemplo:**
+
+```php
+// ✅ Código aberto para extensão
+interface UserRepositoryInterface
+{
+    public function create(array $data): User;
+    public function findByEmail(string $email): ?User;
+}
+
+// Implementação padrão (Eloquent)
+class EloquentUserRepository implements UserRepositoryInterface
+{
+    public function create(array $data): User
+    {
+        return User::create($data);
+    }
+}
+
+// Nova implementação (MongoDB) - SEM modificar código existente
+class MongoUserRepository implements UserRepositoryInterface
+{
+    public function create(array $data): User
+    {
+        // Lógica MongoDB
+    }
+}
+
+// Service não precisa mudar, funciona com qualquer implementação
+class UserService
+{
+    public function __construct(
+        private UserRepositoryInterface $userRepository // Interface!
+    ) {}
+}
+```
+
+---
+
+### 3️⃣ **L** - Liskov Substitution Principle (Substituição de Liskov)
+
+**Princípio:** *"Objetos de uma superclasse devem ser substituíveis por objetos de suas subclasses sem quebrar a aplicação"*
+
+**Como aplicamos:**
+
+- ✅ **Repository Interface**: Qualquer implementação pode substituir outra
+- ✅ **Actions**: Podem implementar interface comum e serem intercambiáveis
+- ✅ **DTOs**: Consistência de estrutura de dados
+
+**Exemplo:**
+
+```php
+// ✅ Implementações intercambiáveis
+interface PaymentGatewayInterface
+{
+    public function charge(float $amount): Payment;
+}
+
+class StripePaymentGateway implements PaymentGatewayInterface
+{
+    public function charge(float $amount): Payment
+    {
+        // Lógica Stripe
+        return new Payment([...]);
+    }
+}
+
+class PayPalPaymentGateway implements PaymentGatewayInterface
+{
+    public function charge(float $amount): Payment
+    {
+        // Lógica PayPal
+        return new Payment([...]);
+    }
+}
+
+// Service funciona com QUALQUER gateway
+class PaymentService
+{
+    public function __construct(
+        private PaymentGatewayInterface $gateway
+    ) {}
+    
+    public function processPayment(Order $order): Payment
+    {
+        return $this->gateway->charge($order->total);
+    }
+}
+```
+
+---
+
+### 4️⃣ **I** - Interface Segregation Principle (Segregação de Interface)
+
+**Princípio:** *"Muitas interfaces específicas são melhores que uma interface única"*
+
+**Como aplicamos:**
+
+- ✅ **Repositories/Contracts**: Interfaces pequenas e específicas
+- ✅ **Actions**: Cada action tem sua própria interface
+- ✅ **Traits**: Comportamentos específicos e opcionais
+
+**Exemplo:**
+
+```php
+// ❌ ERRADO - Interface "gorda" com métodos que nem todos precisam
+interface UserRepositoryInterface
+{
+    public function create(array $data): User;
+    public function update(User $user, array $data): User;
+    public function delete(User $user): bool;
+    public function export(): string; // Nem todos precisam disso
+    public function import(string $file): void; // Nem todos precisam disso
+    public function generateReport(): array; // Nem todos precisam disso
+}
+
+// ✅ CORRETO - Interfaces segregadas
+interface UserRepositoryInterface
+{
+    public function create(array $data): User;
+    public function update(User $user, array $data): User;
+    public function delete(User $user): bool;
+}
+
+interface ExportableRepositoryInterface
+{
+    public function export(): string;
+}
+
+interface ImportableRepositoryInterface
+{
+    public function import(string $file): void;
+}
+
+interface ReportableRepositoryInterface
+{
+    public function generateReport(): array;
+}
+
+// Implementação escolhe quais interfaces implementar
+class UserRepository implements 
+    UserRepositoryInterface,
+    ExportableRepositoryInterface // Apenas se precisar
+{
+    // ...
+}
+```
+
+---
+
+### 5️⃣ **D** - Dependency Inversion Principle (Inversão de Dependência)
+
+**Princípio:** *"Dependa de abstrações, não de implementações concretas"*
+
+**Como aplicamos:**
+
+- ✅ **Repository Pattern**: Services dependem de interfaces, não de implementações
+- ✅ **Dependency Injection**: Laravel injeta dependências automaticamente
+- ✅ **Service Container**: Bind de interfaces para implementações
+
+**Exemplo:**
+
+```php
+// ❌ ERRADO - Dependência de classe concreta
+class UserService
+{
+    public function __construct(
+        private EloquentUserRepository $userRepository // Concreto!
+    ) {}
+}
+
+// ✅ CORRETO - Dependência de abstração
+class UserService
+{
+    public function __construct(
+        private UserRepositoryInterface $userRepository // Interface!
+    ) {}
+}
+
+// Configuração no AppServiceProvider
+public function register(): void
+{
+    $this->app->bind(
+        UserRepositoryInterface::class,
+        EloquentUserRepository::class // Pode trocar facilmente
+    );
+}
+
+// Agora podemos trocar a implementação sem alterar UserService:
+$this->app->bind(
+    UserRepositoryInterface::class,
+    CachedUserRepository::class // Nova implementação!
+);
+```
+
+---
+
+## 🎨 Padrões de Projeto (Design Patterns)
+
+Esta arquitetura implementa diversos **Design Patterns** clássicos:
+
+### 1. **Repository Pattern** 🏛️
+
+**Onde:** `app/Repositories/`
+
+**Objetivo:** Abstrair o acesso a dados, isolando a lógica de persistência.
+
+**Benefícios:**
+- ✅ Facilita mudança de banco de dados
+- ✅ Facilita testes (mock do Repository)
+- ✅ Centraliza queries complexas
+
+**Estrutura:**
+
+```php
+// Interface (Contrato)
+interface UserRepositoryInterface
+{
+    public function create(array $data): User;
+    public function findByEmail(string $email): ?User;
+}
+
+// Implementação
+class EloquentUserRepository implements UserRepositoryInterface
+{
+    public function create(array $data): User
+    {
+        return User::create($data);
+    }
+    
+    public function findByEmail(string $email): ?User
+    {
+        return User::where('email', $email)->first();
+    }
+}
+
+// Uso no Service
+class UserService
+{
+    public function __construct(
+        private UserRepositoryInterface $userRepository
+    ) {}
+    
+    public function createUser(array $data): User
+    {
+        return $this->userRepository->create($data);
+    }
+}
+```
+
+---
+
+### 2. **Service Layer Pattern** ⚙️
+
+**Onde:** `app/Services/`
+
+**Objetivo:** Encapsular lógica de negócio complexa e orquestrar múltiplas operações.
+
+**Benefícios:**
+- ✅ Controllers magros
+- ✅ Reutilização de lógica
+- ✅ Facilita testes unitários
+
+**Estrutura:**
+
+```php
+class OrderService
+{
+    public function __construct(
+        private OrderRepository $orderRepository,
+        private PaymentService $paymentService,
+        private EmailService $emailService,
+        private InventoryService $inventoryService
+    ) {}
+    
+    public function placeOrder(array $data): Order
+    {
+        DB::beginTransaction();
+        try {
+            // 1. Criar pedido
+            $order = $this->orderRepository->create($data);
+            
+            // 2. Processar pagamento
+            $payment = $this->paymentService->processPayment($order);
+            
+            // 3. Atualizar estoque
+            $this->inventoryService->decreaseStock($order->items);
+            
+            // 4. Enviar email
+            $this->emailService->sendOrderConfirmation($order);
+            
+            DB::commit();
+            return $order;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+}
+```
+
+---
+
+### 3. **Action/Command Pattern** 🎯
+
+**Onde:** `app/Actions/`
+
+**Objetivo:** Encapsular uma única ação/operação em uma classe.
+
+**Benefícios:**
+- ✅ Single Responsibility
+- ✅ Testável isoladamente
+- ✅ Reutilizável
+
+**Estrutura:**
+
+```php
+class ProcessPaymentAction
+{
+    public function __construct(
+        private PaymentGateway $gateway,
+        private OrderRepository $orderRepository
+    ) {}
+    
+    public function execute(Order $order, array $paymentData): Payment
+    {
+        $payment = $this->gateway->charge(
+            amount: $order->total,
+            method: $paymentData['method']
+        );
+        
+        $this->orderRepository->markAsPaid($order, $payment);
+        
+        return $payment;
+    }
+}
+
+// Uso
+$payment = app(ProcessPaymentAction::class)->execute($order, $paymentData);
+```
+
+---
+
+### 4. **Observer Pattern** 👁️
+
+**Onde:** `app/Observers/`
+
+**Objetivo:** Reagir a eventos do Model automaticamente.
+
+**Benefícios:**
+- ✅ Desacoplamento
+- ✅ Efeitos colaterais organizados
+- ✅ Fácil adicionar novos comportamentos
+
+**Estrutura:**
+
+```php
+class UserObserver
+{
+    public function created(User $user): void
+    {
+        // Enviar email de boas-vindas
+        Mail::to($user)->send(new WelcomeEmail($user));
+        
+        // Criar perfil padrão
+        $user->profile()->create([
+            'bio' => '',
+            'avatar' => 'default.png'
+        ]);
+        
+        // Log
+        Log::info("New user registered: {$user->email}");
+    }
+    
+    public function updated(User $user): void
+    {
+        // Limpar cache
+        Cache::forget("user:{$user->id}");
+    }
+}
+
+// Registrar no AppServiceProvider
+User::observe(UserObserver::class);
+```
+
+---
+
+### 5. **Data Transfer Object (DTO) Pattern** 📦
+
+**Onde:** `app/DTOs/`
+
+**Objetivo:** Transferir dados entre camadas de forma tipada e imutável.
+
+**Benefícios:**
+- ✅ Type-safety
+- ✅ Imutabilidade
+- ✅ Validação centralizada
+
+**Estrutura:**
+
+```php
+class CreateUserDTO
+{
+    public function __construct(
+        public readonly string $name,
+        public readonly string $email,
+        public readonly string $password,
+        public readonly ?string $phone = null
+    ) {}
+    
+    public static function fromRequest(array $data): self
+    {
+        return new self(
+            name: $data['name'],
+            email: $data['email'],
+            password: $data['password'],
+            phone: $data['phone'] ?? null
+        );
+    }
+    
+    public function toArray(): array
+    {
+        return [
+            'name' => $this->name,
+            'email' => $this->email,
+            'password' => bcrypt($this->password),
+            'phone' => $this->phone,
+        ];
+    }
+}
+
+// Uso
+$dto = CreateUserDTO::fromRequest($request->validated());
+$user = $this->userService->create($dto);
+```
+
+---
+
+### 6. **Strategy Pattern** 🎲
+
+**Onde:** `app/Services/` + Interfaces
+
+**Objetivo:** Permitir troca de algoritmos/estratégias em tempo de execução.
+
+**Benefícios:**
+- ✅ Flexibilidade
+- ✅ Fácil adicionar novas estratégias
+- ✅ Testável
+
+**Estrutura:**
+
+```php
+// Estratégias de pagamento
+interface PaymentStrategyInterface
+{
+    public function pay(float $amount): Payment;
+}
+
+class CreditCardStrategy implements PaymentStrategyInterface
+{
+    public function pay(float $amount): Payment
+    {
+        // Lógica cartão de crédito
+    }
+}
+
+class PixStrategy implements PaymentStrategyInterface
+{
+    public function pay(float $amount): Payment
+    {
+        // Lógica PIX
+    }
+}
+
+// Context
+class PaymentService
+{
+    public function processPayment(
+        float $amount,
+        PaymentStrategyInterface $strategy
+    ): Payment {
+        return $strategy->pay($amount);
+    }
+}
+
+// Uso
+$payment = $paymentService->processPayment(
+    amount: 100.00,
+    strategy: new PixStrategy()
+);
+```
+
+---
+
+### 7. **Factory Pattern** 🏭
+
+**Onde:** `app/Services/Factories/`
+
+**Objetivo:** Criar objetos complexos sem expor a lógica de criação.
+
+**Benefícios:**
+- ✅ Centraliza criação
+- ✅ Fácil testar
+- ✅ Reutilizável
+
+**Estrutura:**
+
+```php
+class OrderFactory
+{
+    public function create(User $user, array $items): Order
+    {
+        return Order::create([
+            'user_id' => $user->id,
+            'total' => $this->calculateTotal($items),
+            'status' => OrderStatus::PENDING,
+            'items' => $items,
+        ]);
+    }
+    
+    private function calculateTotal(array $items): float
+    {
+        return collect($items)->sum(fn($item) => $item['price'] * $item['qty']);
+    }
+}
+```
+
+---
+
+### 8. **Decorator Pattern** 🎁
+
+**Onde:** `app/Repositories/` (Repository com Cache)
+
+**Objetivo:** Adicionar comportamento a um objeto sem modificá-lo.
+
+**Benefícios:**
+- ✅ Composição sobre herança
+- ✅ Flexível
+- ✅ Open/Closed Principle
+
+**Estrutura:**
+
+```php
+// Repository base
+class UserRepository implements UserRepositoryInterface
+{
+    public function find(int $id): ?User
+    {
+        return User::find($id);
+    }
+}
+
+// Decorator com cache
+class CachedUserRepository implements UserRepositoryInterface
+{
+    public function __construct(
+        private UserRepositoryInterface $repository
+    ) {}
+    
+    public function find(int $id): ?User
+    {
+        return Cache::remember(
+            key: "user:{$id}",
+            ttl: 3600,
+            callback: fn() => $this->repository->find($id)
+        );
+    }
+}
+
+// Binding
+$this->app->bind(UserRepositoryInterface::class, function ($app) {
+    return new CachedUserRepository(
+        new UserRepository()
+    );
+});
+```
+
+---
+
+## 📊 Resumo: SOLID + Design Patterns na Arquitetura
+
+| Princípio/Pattern | Onde Aplicamos | Benefício Principal |
+|-------------------|----------------|---------------------|
+| **S** - Single Responsibility | Services, Controllers, Actions | Manutenibilidade |
+| **O** - Open/Closed | Interfaces, Observers | Extensibilidade |
+| **L** - Liskov Substitution | Repository Interfaces | Intercambiabilidade |
+| **I** - Interface Segregation | Repositories/Contracts | Flexibilidade |
+| **D** - Dependency Inversion | DI Container, Interfaces | Desacoplamento |
+| **Repository Pattern** | app/Repositories/ | Abstração de dados |
+| **Service Layer** | app/Services/ | Lógica de negócio |
+| **Action/Command** | app/Actions/ | Single responsibility |
+| **Observer** | app/Observers/ | Reatividade |
+| **DTO** | app/DTOs/ | Type-safety |
+| **Strategy** | Services + Interfaces | Algoritmos intercambiáveis |
+| **Factory** | Services/Factories/ | Criação complexa |
+| **Decorator** | Repositories (Cache) | Comportamento adicional |
+
+---
+
 ## 📁 Estrutura de Pastas
 
 ### 🌐 `app/Http/` - Camada de Transporte/Interface
