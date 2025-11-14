@@ -21,6 +21,9 @@ setup-architecture: ## Cria estrutura completa de pastas (Services, Repositories
 	@echo ""
 	@mkdir -p backups 2>/dev/null || true
 	@docker compose exec php bash -c ' \
+		GREEN="\033[0;32m"; \
+		YELLOW="\033[1;33m"; \
+		NC="\033[0m"; \
 		created=(); \
 		existed=(); \
 		dirs=( \
@@ -46,14 +49,14 @@ setup-architecture: ## Cria estrutura completa de pastas (Services, Repositories
 		if [ $${#created[@]} -gt 0 ]; then \
 			echo "✅ Criadas ($${#created[@]}):" ; \
 			for dir in "$${created[@]}"; do \
-				echo "   $(GREEN)+ $$dir$(NC)"; \
+				echo -e "   $${GREEN}+ $$dir$${NC}"; \
 			done; \
 		fi; \
 		if [ $${#existed[@]} -gt 0 ]; then \
 			echo ""; \
 			echo "ℹ️  Já existiam ($${#existed[@]}):" ; \
 			for dir in "$${existed[@]}"; do \
-				echo "   $(YELLOW)✓ $$dir$(NC)"; \
+				echo -e "   $${YELLOW}✓ $$dir$${NC}"; \
 			done; \
 		fi; \
 	' || true
