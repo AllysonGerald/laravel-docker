@@ -121,12 +121,39 @@ make-enum: ## Cria enum
 	docker compose exec php php artisan make:enum $$name
 
 make-interface: ## Cria interface
-	@read -p "Nome da interface: " name; \
-	docker compose exec php php artisan make:interface $$name
+	@read -p "Nome da interface (ex: UserRepositoryInterface): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando interface $$name...$(NC)"; \
+		docker compose exec php bash -c "echo '<?php' > backend/app/$$name.php"; \
+		docker compose exec php bash -c "echo '' >> backend/app/$$name.php"; \
+		docker compose exec php bash -c "echo 'namespace App;' >> backend/app/$$name.php"; \
+		docker compose exec php bash -c "echo '' >> backend/app/$$name.php"; \
+		docker compose exec php bash -c "echo 'interface $$name' >> backend/app/$$name.php"; \
+		docker compose exec php bash -c "echo '{' >> backend/app/$$name.php"; \
+		docker compose exec php bash -c "echo '    // Define interface methods' >> backend/app/$$name.php"; \
+		docker compose exec php bash -c "echo '}' >> backend/app/$$name.php"; \
+		echo "$(GREEN)✅ Interface $$name criada em backend/app/$$name.php$(NC)"; \
+	fi
 
 make-trait: ## Cria trait
-	@read -p "Nome do trait: " name; \
-	docker compose exec php php artisan make:trait $$name
+	@read -p "Nome do trait (ex: HasUuid): " name; \
+	if [ -z "$$name" ]; then \
+		echo "$(RED)❌ Nome é obrigatório!$(NC)"; \
+	else \
+		echo "$(GREEN)📝 Criando trait $$name...$(NC)"; \
+		docker compose exec php mkdir -p backend/app/Traits; \
+		docker compose exec php bash -c "echo '<?php' > backend/app/Traits/$$name.php"; \
+		docker compose exec php bash -c "echo '' >> backend/app/Traits/$$name.php"; \
+		docker compose exec php bash -c "echo 'namespace App\\\Traits;' >> backend/app/Traits/$$name.php"; \
+		docker compose exec php bash -c "echo '' >> backend/app/Traits/$$name.php"; \
+		docker compose exec php bash -c "echo 'trait $$name' >> backend/app/Traits/$$name.php"; \
+		docker compose exec php bash -c "echo '{' >> backend/app/Traits/$$name.php"; \
+		docker compose exec php bash -c "echo '    // Trait methods' >> backend/app/Traits/$$name.php"; \
+		docker compose exec php bash -c "echo '}' >> backend/app/Traits/$$name.php"; \
+		echo "$(GREEN)✅ Trait $$name criado em backend/app/Traits/$$name.php$(NC)"; \
+	fi
 
 make-scope: ## Cria scope para model
 	@read -p "Nome do scope: " name; \

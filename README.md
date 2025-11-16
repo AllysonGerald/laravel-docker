@@ -523,6 +523,111 @@ Corrige automaticamente:
 - Formatação (Laravel Pint)
 - Problemas detectáveis (PHP Insights)
 
+### ⚙️ Padrões de Código Pré-Configurados
+
+Este template já vem com **PHP CS Fixer configurado** seguindo as melhores práticas da indústria:
+
+**Arquivo:** `backend/.php-cs-fixer.dist.php`
+
+**Regras Aplicadas:**
+- ✅ **@PSR12** - Padrão PSR-12 completo
+- ✅ **@Symfony** - Convenções Symfony
+- ✅ **@PHP82Migration** - Migração para PHP 8.2+
+- ✅ **declare_strict_types** - Tipagem estrita
+- ✅ **void_return** - Retorno void explícito
+- ✅ **yoda_style** - Estilo Yoda nas comparações
+- ✅ **array_syntax short** - Sintaxe curta de arrays []
+- ✅ **global_namespace_import** - Import de namespace global
+- ✅ **class_definition** - Definição de classes consistente
+
+### 🎯 Comandos PHP CS Fixer Disponíveis
+
+#### Verificação (sem alterar código)
+
+```bash
+make phpcs-check              # Verifica todo o projeto
+make phpcs-check-app          # Verifica apenas app/
+make phpcs-check-file         # Verifica arquivo específico
+```
+
+#### Correção Automática
+
+```bash
+make phpcs-fix                # Corrige todo o projeto
+make phpcs-fix-app            # Corrige apenas app/
+make phpcs-fix-controllers    # Corrige apenas Controllers
+make phpcs-fix-models         # Corrige apenas Models
+make phpcs-fix-services       # Corrige apenas Services
+make phpcs-fix-repositories   # Corrige apenas Repositories
+make phpcs-fix-file           # Corrige arquivo específico
+```
+
+#### Informações e Utilidades
+
+```bash
+make phpcs-version            # Mostra versão instalada
+make phpcs-describe           # Descreve todas as regras ativas
+make phpcs-config             # Mostra configuração atual
+make phpcs-list-files         # Lista arquivos que serão verificados
+make phpcs-cache-clear        # Limpa cache do PHP CS Fixer
+```
+
+### 🚀 Workflow Recomendado
+
+**Antes de fazer commit:**
+
+```bash
+# 1. Verificar código
+make phpcs-check
+
+# 2. Corrigir automaticamente
+make phpcs-fix
+
+# 3. Executar testes
+make test
+
+# 4. Fazer commit
+make git-add
+make git-commit
+```
+
+**Ou use o workflow rápido:**
+
+```bash
+make before-commit            # Executa tudo automaticamente
+```
+
+### 📝 Arquivos Ignorados pelo Git
+
+Os seguintes arquivos são ignorados automaticamente:
+- `.php-cs-fixer.cache` - Cache do PHP CS Fixer (performance)
+- `.php-cs-fixer.php` - Configuração local personalizada
+
+### 🎨 Customizar Regras Localmente
+
+Se precisar de regras personalizadas apenas no seu ambiente local:
+
+```bash
+# 1. Copiar configuração padrão
+cp backend/.php-cs-fixer.dist.php backend/.php-cs-fixer.php
+
+# 2. Editar suas regras personalizadas
+nano backend/.php-cs-fixer.php
+
+# 3. Usar normalmente (prioridade: local > dist)
+make phpcs-check
+```
+
+**Observação:** O arquivo `.php-cs-fixer.php` é ignorado pelo Git, então suas customizações não afetam o time.
+
+### 💡 Por Que Usar PHP CS Fixer?
+
+✅ **Consistência** - Código padronizado em todo o projeto  
+✅ **Produtividade** - Correção automática de estilo  
+✅ **Qualidade** - Segue padrões PSR-12 e Symfony  
+✅ **CI/CD** - Fácil integração em pipelines  
+✅ **Time** - Todos seguem o mesmo padrão
+
 ## 🐛 Troubleshooting
 
 ### Container não inicia
