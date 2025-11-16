@@ -59,18 +59,74 @@ phpcs-install: ## Instala PHP CS Fixer
 	@echo "$(GREEN)📦 Instalando PHP CS Fixer...$(NC)"
 	docker compose exec php composer require --dev friendsofphp/php-cs-fixer
 	@echo "$(GREEN)✅ PHP CS Fixer instalado!$(NC)"
+	@echo "$(YELLOW)💡 Configure em: backend/.php-cs-fixer.dist.php$(NC)"
 
 phpcs-check: ## Verifica estilo de código (sem alterar)
 	@echo "$(GREEN)🔍 Verificando estilo de código...$(NC)"
-	docker compose exec php ./vendor/bin/php-cs-fixer fix --dry-run --diff backend/app || true
+	docker compose exec php ./vendor/bin/php-cs-fixer fix --dry-run --diff --verbose
 
-phpcs-fix: ## Corrige estilo de código automaticamente
+phpcs-check-app: ## Verifica apenas diretório app/
+	@echo "$(GREEN)🔍 Verificando app/...$(NC)"
+	docker compose exec php ./vendor/bin/php-cs-fixer fix app/ --dry-run --diff
+
+phpcs-check-file: ## Verifica arquivo específico
+	@read -p "Arquivo (ex: app/Http/Controllers/Controller.php): " file; \
+	echo "$(GREEN)🔍 Verificando $$file...$(NC)"; \
+	docker compose exec php ./vendor/bin/php-cs-fixer fix $$file --dry-run --diff --verbose
+
+phpcs-fix: ## Corrige estilo de código automaticamente (todo o projeto)
 	@echo "$(GREEN)🔧 Corrigindo estilo de código...$(NC)"
-	docker compose exec php ./vendor/bin/php-cs-fixer fix backend/app
+	docker compose exec php ./vendor/bin/php-cs-fixer fix
 
-phpcs-config: ## Gera arquivo de configuração .php-cs-fixer.php
-	@echo "$(GREEN)⚙️  Gerando configuração do PHP CS Fixer...$(NC)"
-	docker compose exec php ./vendor/bin/php-cs-fixer --init || true
+phpcs-fix-app: ## Corrige apenas diretório app/
+	@echo "$(GREEN)🔧 Corrigindo app/...$(NC)"
+	docker compose exec php ./vendor/bin/php-cs-fixer fix app/
+
+phpcs-fix-controllers: ## Corrige apenas Controllers
+	@echo "$(GREEN)🔧 Corrigindo Controllers...$(NC)"
+	docker compose exec php ./vendor/bin/php-cs-fixer fix app/Http/Controllers/
+
+phpcs-fix-models: ## Corrige apenas Models
+	@echo "$(GREEN)🔧 Corrigindo Models...$(NC)"
+	docker compose exec php ./vendor/bin/php-cs-fixer fix app/Models/
+
+phpcs-fix-services: ## Corrige apenas Services
+	@echo "$(GREEN)🔧 Corrigindo Services...$(NC)"
+	docker compose exec php ./vendor/bin/php-cs-fixer fix app/Services/
+
+phpcs-fix-repositories: ## Corrige apenas Repositories
+	@echo "$(GREEN)🔧 Corrigindo Repositories...$(NC)"
+	docker compose exec php ./vendor/bin/php-cs-fixer fix app/Repositories/
+
+phpcs-fix-file: ## Corrige arquivo específico
+	@read -p "Arquivo (ex: app/Http/Controllers/Controller.php): " file; \
+	echo "$(GREEN)🔧 Corrigindo $$file...$(NC)"; \
+	docker compose exec php ./vendor/bin/php-cs-fixer fix $$file --verbose
+
+phpcs-list-files: ## Lista arquivos que serão verificados
+	@echo "$(GREEN)📋 Listando arquivos a serem verificados...$(NC)"
+	docker compose exec php ./vendor/bin/php-cs-fixer list-files
+
+phpcs-describe: ## Descreve as regras ativas
+	@echo "$(GREEN)📖 Regras ativas do PHP CS Fixer:$(NC)"
+	docker compose exec php ./vendor/bin/php-cs-fixer describe
+
+phpcs-cache-clear: ## Limpa cache do PHP CS Fixer
+	@echo "$(YELLOW)🧹 Limpando cache do PHP CS Fixer...$(NC)"
+	docker compose exec php rm -f .php-cs-fixer.cache
+	@echo "$(GREEN)✅ Cache limpo!$(NC)"
+
+phpcs-version: ## Mostra versão do PHP CS Fixer
+	@docker compose exec php ./vendor/bin/php-cs-fixer --version
+
+phpcs-config: ## Mostra configuração atual
+	@echo "$(GREEN)⚙️  Configuração do PHP CS Fixer:$(NC)"
+	@if [ -f "backend/.php-cs-fixer.dist.php" ]; then \
+		echo "$(GREEN)✅ Arquivo: backend/.php-cs-fixer.dist.php$(NC)"; \
+		cat backend/.php-cs-fixer.dist.php; \
+	else \
+		echo "$(RED)❌ Arquivo .php-cs-fixer.dist.php não encontrado$(NC)"; \
+	fi
 
 
 ##@ 🎨 Laravel Pint - Formatação Moderna
