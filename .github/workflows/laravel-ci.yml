@@ -38,14 +38,27 @@ jobs:
       working-directory: ./backend
       run: composer install --no-interaction --no-progress --prefer-dist
 
-    # 5. Configura o Node.js (necessário para o Tailwind)
+    # 5. Verifica se existe configuração de frontend
+    - name: Check if frontend exists
+      id: check-frontend
+      working-directory: ./backend
+      run: |
+        if [ -f "package.json" ] && [ -f "vite.config.js" ]; then
+          echo "has_frontend=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_frontend=false" >> $GITHUB_OUTPUT
+        fi
+
+    # 6. Configura o Node.js (apenas se tiver frontend)
     - name: Setup Node.js
+      if: steps.check-frontend.outputs.has_frontend == 'true'
       uses: actions/setup-node@v4
       with:
         node-version: '20.x'
 
-    # 6. Cache das dependências do NPM
+    # 7. Cache das dependências do NPM (apenas se tiver frontend)
     - name: Cache Node.js modules
+      if: steps.check-frontend.outputs.has_frontend == 'true'
       uses: actions/cache@v4
       with:
         path: ~/.npm
@@ -53,39 +66,40 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
 
-    # 7. Instala dependências do NPM
+    # 8. Instala dependências do NPM (apenas se tiver frontend)
     - name: Install NPM dependencies
+      if: steps.check-frontend.outputs.has_frontend == 'true'
       working-directory: ./backend
       run: npm install
 
-    # 8. Compila os assets (TailwindCSS/Vite)
+    # 9. Compila os assets (apenas se tiver frontend)
     - name: Build frontend assets
+      if: steps.check-frontend.outputs.has_frontend == 'true'
       working-directory: ./backend
       run: npm run build
 
-    # 9. Prepara o ambiente Laravel para testes
+    # 10. Prepara o ambiente Laravel para testes
     - name: Prepare Laravel Environment
       working-directory: ./backend
       run: |
         cp .env.example .env
         php artisan key:generate
 
-    # 10. Prepara o banco de dados de teste (SQLite)
+    # 11. Prepara o banco de dados de teste (SQLite)
     - name: Setup Test Database
       working-directory: ./backend
       run: |
         touch database/database.sqlite
 
-    # 11. Verifica o Estilo do Código (PHP-CS-Fixer)
+    # 12. Verifica o Estilo do Código (PHP-CS-Fixer)
     - name: Check Code Style (PHP-CS-Fixer)
       working-directory: ./backend
       run: ./vendor/bin/php-cs-fixer fix --dry-run --diff --verbose
 
-    # 12. Roda os testes (PHPUnit / Pest)
+    # 13. Roda os testes (PHPUnit / Pest)
     - name: Run tests
       working-directory: ./backend
       env:
         DB_CONNECTION: sqlite
         DB_DATABASE: ${{ github.workspace }}/backend/database/database.sqlite
       run: php artisan test
-
