@@ -28,4 +28,3 @@ return (new Config())
         'class_definition' => ['space_before_parenthesis' => true],
     ])
     ->setFinder($finder);
-
