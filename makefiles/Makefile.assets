@@ -1,0 +1,24 @@
+.PHONY: assets-install assets-build assets-dev assets-watch assets-clean
+
+##@ 🎨 Assets (Vite/Tailwind)
+
+assets-install: ## Instala dependências NPM
+	@echo "$(BLUE)📦 Instalando dependências NPM...$(NC)"
+	@cd backend && npm install
+
+assets-build: ## Compila assets para produção
+	@echo "$(BLUE)🔨 Compilando assets para produção...$(NC)"
+	@cd backend && npm run build
+
+assets-dev: ## Inicia servidor de desenvolvimento Vite
+	@echo "$(BLUE)🚀 Iniciando servidor Vite...$(NC)"
+	@cd backend && npm run dev
+
+assets-watch: assets-dev ## Alias para assets-dev
+
+assets-clean: ## Remove node_modules e cache
+	@echo "$(YELLOW)🧹 Limpando node_modules e cache...$(NC)"
+	@cd backend && rm -rf node_modules package-lock.json .vite-temp public/build
+
+assets-fresh: assets-clean assets-install assets-build ## Limpa, instala e compila assets
+
