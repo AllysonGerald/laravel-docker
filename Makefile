@@ -31,5 +31,6 @@ include makefiles/Makefile.maintenance
 include makefiles/Makefile.setup
 include makefiles/Makefile.utils
 include makefiles/Makefile.quality
+include makefiles/Makefile.assets
 
 .DEFAULT_GOAL := help

@@ -1,0 +1,58 @@
+.PHONY: assets-install assets-build assets-dev assets-watch assets-clean assets-update assets-audit assets-check assets-prod assets-analyze assets-version assets-fix
+
+##@ 🎨 Assets (Vite/Tailwind)
+
+assets-install: ## Instala dependências NPM
+	@echo "$(BLUE)📦 Instalando dependências NPM...$(NC)"
+	@cd backend && npm install
+
+assets-build: ## Compila assets para produção
+	@echo "$(BLUE)🔨 Compilando assets para produção...$(NC)"
+	@cd backend && npm run build
+
+assets-dev: ## Inicia servidor de desenvolvimento Vite
+	@echo "$(BLUE)🚀 Iniciando servidor Vite...$(NC)"
+	@cd backend && npm run dev
+
+assets-watch: assets-dev ## Alias para assets-dev
+
+assets-clean: ## Remove node_modules e cache
+	@echo "$(YELLOW)🧹 Limpando node_modules e cache...$(NC)"
+	@cd backend && rm -rf node_modules package-lock.json .vite-temp public/build
+
+assets-fresh: assets-clean assets-install assets-build ## Limpa, instala e compila assets
+
+assets-update: ## Atualiza dependências NPM
+	@echo "$(YELLOW)⬆️  Atualizando dependências NPM...$(NC)"
+	@cd backend && npm update
+
+assets-audit: ## Audita dependências por vulnerabilidades
+	@echo "$(YELLOW)🔍 Verificando vulnerabilidades...$(NC)"
+	@cd backend && npm audit
+
+assets-audit-fix: ## Corrige vulnerabilidades automaticamente
+	@echo "$(YELLOW)🔧 Corrigindo vulnerabilidades...$(NC)"
+	@cd backend && npm audit fix
+
+assets-check: ## Verifica se há erros no código
+	@echo "$(BLUE)🔍 Verificando código...$(NC)"
+	@cd backend && npm run build --dry-run 2>&1 || echo "$(YELLOW)⚠️  Execute 'make assets-build' para ver erros completos$(NC)"
+
+assets-prod: ## Build otimizado para produção
+	@echo "$(GREEN)🚀 Compilando para produção (otimizado)...$(NC)"
+	@cd backend && NODE_ENV=production npm run build
+
+assets-analyze: ## Analisa tamanho do bundle
+	@echo "$(BLUE)📊 Analisando bundle...$(NC)"
+	@cd backend && npm run build -- --mode analyze 2>&1 || echo "$(YELLOW)⚠️  Adicione '--mode analyze' no vite.config.js para habilitar análise$(NC)"
+
+assets-version: ## Mostra versões das dependências
+	@echo "$(BLUE)📋 Versões das dependências:$(NC)"
+	@cd backend && npm list --depth=0 2>/dev/null || echo "$(YELLOW)⚠️  Execute 'make assets-install' primeiro$(NC)"
+
+assets-fix: ## Corrige problemas automaticamente (audit + update)
+	@echo "$(YELLOW)🔧 Corrigindo problemas...$(NC)"
+	@cd backend && npm audit fix --force || true
+	@cd backend && npm update
+	@echo "$(GREEN)✅ Correções aplicadas!$(NC)"
+
