@@ -7,7 +7,7 @@ route-list: ## Lista todas as rotas
 	docker compose exec php php artisan route:list
 
 route-list-full: ## Lista rotas com detalhes completos
-	docker compose exec php php artisan route:list --columns=uri,name,action,middleware
+	docker compose exec php php artisan route:list -v
 
 about: ## Mostra informações sobre a aplicação
 	docker compose exec php php artisan about
