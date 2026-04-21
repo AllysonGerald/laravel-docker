@@ -17,7 +17,7 @@ return (new Config())
         'psr_autoloading' => true,
         '@PSR12' => true,
         '@Symfony' => true,
-        '@PHP82Migration' => true,
+        '@PHP83Migration' => true,
         'array_syntax' => ['syntax' => 'short'],
         'declare_strict_types' => true,
         'void_return' => true,
