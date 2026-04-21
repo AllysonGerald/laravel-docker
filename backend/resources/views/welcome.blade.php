@@ -1,3 +1,4 @@
+{{-- Página inicial alinhada ao skeleton oficial Laravel 13.x (laravel/laravel@13.x) --}}
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
